@@ -125,64 +125,73 @@ export const GovtBanner: React.FC = () => {
       </div>
 
       {/* 3. Official Government Masthead with Ministry of AYUSH & Hon'ble PM */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3 sm:py-5 flex flex-wrap items-center justify-between gap-6">
         {/* Ministry of AYUSH Emblem & Brand */}
-        <div className="flex items-center gap-3 sm:gap-4">
-          <div className="relative w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 bg-white rounded border border-slate-200 p-1 flex items-center justify-center shadow-xs">
+        <div className="flex items-center gap-3.5 sm:gap-5">
+          <div className="relative w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 flex-shrink-0 bg-white rounded-xl border border-slate-200 p-1.5 flex items-center justify-center shadow-xs">
             <Image
               src="/images/ayush_logo.jpg"
               alt="Ministry of AYUSH Government of India Emblem"
-              width={64}
-              height={64}
+              width={96}
+              height={96}
               className="object-contain max-h-full"
               priority
             />
           </div>
 
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs sm:text-sm font-bold text-slate-800 tracking-wide uppercase">
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-xs sm:text-sm font-bold text-slate-800 tracking-wider uppercase">
                 आयुष मंत्रालय
               </span>
               <span className="text-xs text-slate-400">|</span>
-              <span className="text-xs sm:text-sm font-bold text-slate-800 tracking-wide uppercase">
+              <span className="text-xs sm:text-sm font-bold text-slate-800 tracking-wider uppercase">
                 Ministry of AYUSH
               </span>
             </div>
-            <h1 className="text-base sm:text-xl lg:text-2xl font-black text-[#002147] leading-tight">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-[#002147] leading-tight">
               IP-SAKTI Sahayak
             </h1>
-            <p className="text-[11px] sm:text-xs text-slate-600 font-medium">
-              National AI Statutory Copilot for Ayurvedic Intellectual Property & TKDL &bull; SIH 045
+            <p className="text-xs sm:text-sm text-slate-600 font-medium max-w-xl mt-0.5">
+              National AI Statutory Copilot for Ayurvedic Intellectual Property, TKDL Prior-Art & BDA 2023 &bull; SIH 045
             </p>
           </div>
         </div>
 
-        {/* Dignitary Profile: Hon'ble Prime Minister */}
-        <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl p-2 sm:px-3 sm:py-2 shadow-xs">
-          <div className="relative w-12 h-14 sm:w-14 sm:h-16 rounded-lg overflow-hidden border border-slate-300 flex-shrink-0 shadow-xs bg-white">
+        {/* Dignitary Profile: Hon'ble Prime Minister of India */}
+        <div className="flex items-center gap-3.5 sm:gap-4 bg-gradient-to-br from-white via-slate-50 to-blue-50/50 border border-slate-200/90 rounded-2xl p-2.5 sm:p-3.5 shadow-sm hover:shadow-md transition-shadow">
+          {/* Large, stately framed portrait */}
+          <div className="relative w-20 h-24 sm:w-28 sm:h-32 lg:w-32 lg:h-36 rounded-xl overflow-hidden border-2 border-slate-300 shadow-md ring-2 ring-[#FF9933]/50 flex-shrink-0 bg-white">
             <Image
               src="/images/pm_modi.jpg"
               alt="Shri Narendra Modi, Hon'ble Prime Minister of India"
-              width={56}
-              height={64}
-              className="object-cover w-full h-full object-top"
+              width={128}
+              height={144}
+              className="object-cover w-full h-full object-top hover:scale-105 transition-transform duration-300"
               priority
             />
           </div>
-          <div className="text-left">
-            <p className="text-xs font-bold text-[#002147] leading-tight">
+          
+          <div className="text-left space-y-0.5">
+            <p className="text-sm sm:text-base lg:text-lg font-black text-[#002147] leading-tight tracking-tight">
               श्री नरेन्द्र मोदी
             </p>
-            <p className="text-[11px] font-semibold text-slate-800 leading-tight">
+            <p className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">
               Shri Narendra Modi
             </p>
-            <p className="text-[10px] text-slate-600 leading-tight mt-0.5 font-medium">
+            <p className="text-[11px] sm:text-xs text-slate-600 leading-tight font-semibold pt-0.5">
               Hon&apos;ble Prime Minister of India
             </p>
-            <span className="inline-block mt-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded">
-              Digital India &bull; AYUSH Mission
-            </span>
+            
+            <div className="pt-1.5 flex flex-col gap-1">
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300/80 px-2 py-0.5 rounded-md w-fit shadow-2xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                <span>Pradhan Mantri AYUSH Mission</span>
+              </span>
+              <span className="text-[9px] text-slate-500 font-medium">
+                National Vision: Digital India &bull; Global AYUSH
+              </span>
+            </div>
           </div>
         </div>
       </div>
