@@ -2,8 +2,10 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from app.core.security import DPDPComplianceEngine
 from app.services.agent import process_query_via_langgraph
+from app.services.classification_engine import FormulationEngine, ClassificationInput, ClassificationResult
 
 router = APIRouter()
+
 
 class AskRequest(BaseModel):
     query: str
@@ -29,3 +31,7 @@ async def ask_ip_assistant(request: AskRequest):
         answer=result["answer"],
         citations=result["citations"]
     )
+
+@router.post("/classify", response_model=ClassificationResult)
+async def classify_formulation(request: ClassificationInput):
+    return FormulationEngine.classify(request)
