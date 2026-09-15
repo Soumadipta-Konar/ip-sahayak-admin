@@ -1,9 +1,36 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
+import { Eye } from 'lucide-react';
 
 export const GovtBanner: React.FC = () => {
+  const [activeSize, setActiveSize] = useState<'sm' | 'base' | 'lg'>('base');
+  const [isHighContrast, setIsHighContrast] = useState(false);
+
+  const handleSetSize = (size: 'sm' | 'base' | 'lg') => {
+    setActiveSize(size);
+    if (typeof document !== 'undefined') {
+      if (size === 'sm') document.documentElement.style.fontSize = '14px';
+      if (size === 'base') document.documentElement.style.fontSize = '16px';
+      if (size === 'lg') document.documentElement.style.fontSize = '18px';
+    }
+  };
+
+  const handleToggleContrast = () => {
+    setIsHighContrast((prev) => {
+      const next = !prev;
+      if (typeof document !== 'undefined') {
+        if (next) {
+          document.documentElement.classList.add('high-contrast');
+        } else {
+          document.documentElement.classList.remove('high-contrast');
+        }
+      }
+      return next;
+    });
+  };
+
   return (
     <header className="w-full bg-white border-b border-slate-200 shadow-sm">
       {/* 1. Tricolor Top Accent Strip */}
@@ -30,25 +57,59 @@ export const GovtBanner: React.FC = () => {
               Skip to Main Content
             </a>
             <span className="text-slate-300">|</span>
+
+            {/* High Contrast Mode Toggle */}
+            <button
+              type="button"
+              onClick={handleToggleContrast}
+              className={`px-1.5 py-0.5 rounded border text-[10px] font-bold flex items-center gap-1 transition-all ${
+                isHighContrast
+                  ? 'bg-yellow-400 text-black border-yellow-500'
+                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+              }`}
+              aria-label="Toggle High Contrast Accessibility Mode"
+            >
+              <Eye className="w-3 h-3" />
+              <span>{isHighContrast ? 'Standard' : 'High Contrast'}</span>
+            </button>
+
+            <span className="text-slate-300">|</span>
+
+            {/* Functional Font Size Controls */}
             <div className="flex items-center gap-1">
               <span className="text-[10px] uppercase text-slate-500">Text Size:</span>
               <button 
                 type="button" 
-                className="px-1.5 py-0.5 rounded bg-white border border-slate-300 text-[10px] font-bold hover:bg-slate-100"
+                onClick={() => handleSetSize('sm')}
+                className={`px-1.5 py-0.5 rounded border text-[10px] font-bold transition-all ${
+                  activeSize === 'sm' 
+                    ? 'bg-[#002147] text-white border-[#002147]' 
+                    : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
+                }`}
                 aria-label="Decrease text size"
               >
                 A-
               </button>
               <button 
                 type="button" 
-                className="px-1.5 py-0.5 rounded bg-white border border-slate-300 text-[10px] font-bold hover:bg-slate-100"
+                onClick={() => handleSetSize('base')}
+                className={`px-1.5 py-0.5 rounded border text-[10px] font-bold transition-all ${
+                  activeSize === 'base' 
+                    ? 'bg-[#002147] text-white border-[#002147]' 
+                    : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
+                }`}
                 aria-label="Standard text size"
               >
                 A
               </button>
               <button 
                 type="button" 
-                className="px-1.5 py-0.5 rounded bg-white border border-slate-300 text-[10px] font-bold hover:bg-slate-100"
+                onClick={() => handleSetSize('lg')}
+                className={`px-1.5 py-0.5 rounded border text-[10px] font-bold transition-all ${
+                  activeSize === 'lg' 
+                    ? 'bg-[#002147] text-white border-[#002147]' 
+                    : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
+                }`}
                 aria-label="Increase text size"
               >
                 A+

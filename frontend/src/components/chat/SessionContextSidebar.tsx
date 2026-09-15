@@ -132,6 +132,16 @@ export const SessionContextSidebar: React.FC = () => {
 
           {/* Action Row */}
           <div className="pt-2 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="w-full py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#002147] text-xs font-bold text-center border border-blue-200 transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
+              title="Print or Save Statutory Dossier as PDF"
+            >
+              <FileText className="w-3.5 h-3.5 text-blue-700" />
+              <span>Print / Save Statutory Dossier (PDF)</span>
+            </button>
+
             <Link
               href="/wizard"
               className="w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#002147] text-xs font-bold text-center border border-slate-300 transition-colors flex items-center justify-center gap-1.5"

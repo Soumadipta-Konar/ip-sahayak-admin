@@ -17,6 +17,34 @@ body {
   color: #0f172a;
   min-height: 100vh;
   font-feature-settings: "rlig" 1, "calt" 1;
+  transition: font-size 0.15s ease-in-out;
+}
+
+/* GIGW High Contrast Accessibility Mode */
+html.high-contrast body {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+}
+
+html.high-contrast header,
+html.high-contrast nav,
+html.high-contrast main,
+html.high-contrast div,
+html.high-contrast aside,
+html.high-contrast footer {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+  border-color: #ffff00 !important;
+}
+
+html.high-contrast button,
+html.high-contrast a,
+html.high-contrast input,
+html.high-contrast select,
+html.high-contrast textarea {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
 }
 
 /* Government of India Portal Surface Styles */
@@ -56,4 +84,19 @@ body {
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #64748b;
+}
+
+/* Clean Official Print Stylesheet for Dossier Export */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+  aside {
+    border: 1px solid #000000 !important;
+    box-shadow: none !important;
+  }
 }
