@@ -64,8 +64,7 @@ workflow.add_node("generate", generate_final_answer)
 # Define edges
 workflow.set_entry_point("decompose")
 workflow.add_edge("decompose", "retrieve_vector")
-workflow.add_edge("decompose", "retrieve_graph")
-workflow.add_edge("retrieve_vector", "generate")
+workflow.add_edge("retrieve_vector", "retrieve_graph")
 workflow.add_edge("retrieve_graph", "generate")
 workflow.add_edge("generate", END)
 

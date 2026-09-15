@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
 from app.core.config import settings
 
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.PROJECT_NAME,
@@ -13,7 +14,7 @@ def create_app() -> FastAPI:
     # Set up CORS for the Next.js frontend
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"], # In production, restrict to frontend domain
+        allow_origins=["*"],  # In production, restrict to frontend domain
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -26,5 +27,6 @@ def create_app() -> FastAPI:
         return {"status": "ok", "environment": settings.ENVIRONMENT}
 
     return app
+
 
 app = create_app()
