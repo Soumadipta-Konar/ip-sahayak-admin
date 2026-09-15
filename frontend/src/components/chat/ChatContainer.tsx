@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { 
@@ -13,7 +13,9 @@ import {
   HelpCircle, 
   CheckCircle2, 
   ArrowRight,
-  ExternalLink 
+  Volume2,
+  VolumeX,
+  Radio
 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { ChatMessage, StatutoryCitation } from '@/lib/types';
@@ -33,6 +35,7 @@ export const ChatContainer: React.FC = () => {
   
   const [inputQuery, setInputQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -62,6 +65,79 @@ export const ChatContainer: React.FC = () => {
       ]
     },
   ]);
+
+  // Clean up speech synthesis on component unmount
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const handleToggleSpeech = (msgId: string, text: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      alert('Speech synthesis is not supported on this browser.');
+      return;
+    }
+
+    // Toggle off if already speaking this message
+    if (speakingMessageId === msgId) {
+      window.speechSynthesis.cancel();
+      setSpeakingMessageId(null);
+      return;
+    }
+
+    // Cancel any previous speech
+    window.speechSynthesis.cancel();
+
+    // Clean markdown characters and citations for smooth, natural audio readout
+    const cleanText = text
+      .replace(/#{1,6}\s+/g, '')
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/`{1,3}[\s\S]*?`{1,3}/g, '')
+      .replace(/\[.*?\]\(.*?\)/g, '')
+      .replace(/§\s*/g, 'Section ')
+      .replace(/[•\*\-]\s+/g, ', ')
+      .trim();
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+
+    // Map language code to browser Indic locale
+    const localeMap: Record<string, string> = {
+      hi: 'hi-IN',
+      ml: 'ml-IN',
+      ta: 'ta-IN',
+      te: 'te-IN',
+      bn: 'bn-IN',
+      en: 'en-IN',
+    };
+
+    utterance.lang = localeMap[language] || 'en-IN';
+    utterance.rate = 0.95; // Official, clear pace
+
+    // Look for matching voice
+    const voices = window.speechSynthesis.getVoices();
+    const matchedVoice = voices.find((v) => 
+      v.lang.toLowerCase().startsWith(utterance.lang.toLowerCase()) || 
+      v.lang.toLowerCase().replace('_', '-').startsWith(utterance.lang.toLowerCase())
+    );
+    if (matchedVoice) {
+      utterance.voice = matchedVoice;
+    }
+
+    utterance.onend = () => {
+      setSpeakingMessageId(null);
+    };
+
+    utterance.onerror = () => {
+      setSpeakingMessageId(null);
+    };
+
+    window.speechSynthesis.speak(utterance);
+    setSpeakingMessageId(msgId);
+  };
 
   const handleSend = async (queryText?: string) => {
     const query = queryText || inputQuery;
@@ -220,14 +296,43 @@ export const ChatContainer: React.FC = () => {
                 </div>
               )}
 
-              {/* Confidence Score & Escalation Footer */}
-              {msg.sender === 'assistant' && msg.confidenceScore !== undefined && (
-                <div className="mt-3 pt-2.5 flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-100">
-                  <div className="flex items-center gap-1">
-                    <span>Statutory Grounding:</span>
-                    <span className="text-emerald-700 font-mono font-bold">
-                      {(msg.confidenceScore * 100).toFixed(0)}%
-                    </span>
+              {/* Audio Listen & Facilitator Footer */}
+              {msg.sender === 'assistant' && (
+                <div className="mt-3.5 pt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 border-t border-slate-200/80">
+                  <div className="flex items-center gap-3">
+                    {/* Audio Listen / Stop Button */}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleSpeech(msg.id, msg.text)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all shadow-2xs ${
+                        speakingMessageId === msg.id
+                          ? 'bg-amber-100 border border-amber-400 text-amber-900'
+                          : 'bg-white border border-slate-300 text-[#002147] hover:bg-blue-50 hover:border-blue-400'
+                      }`}
+                      title={speakingMessageId === msg.id ? 'Stop listening' : 'Listen to legal assessment in audio'}
+                      aria-label={speakingMessageId === msg.id ? 'Stop audio playback' : 'Listen to response in audio'}
+                    >
+                      {speakingMessageId === msg.id ? (
+                        <>
+                          <VolumeX className="w-3.5 h-3.5 text-amber-800 animate-pulse" />
+                          <span>Stop Audio / रोकें</span>
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="w-3.5 h-3.5 text-[#002147]" />
+                          <span>Listen / आवाज़ सुनें</span>
+                        </>
+                      )}
+                    </button>
+
+                    {msg.confidenceScore !== undefined && (
+                      <div className="hidden sm:flex items-center gap-1 text-[11px]">
+                        <span>Grounding:</span>
+                        <span className="text-emerald-700 font-mono font-bold">
+                          {(msg.confidenceScore * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <button
