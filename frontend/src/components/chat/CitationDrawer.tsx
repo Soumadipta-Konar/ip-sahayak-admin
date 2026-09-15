@@ -87,7 +87,7 @@ export const CitationDrawer: React.FC = () => {
                 <p className="leading-relaxed text-slate-400">
                   The Indian Patent Office (IPO) and the National Biodiversity Authority (NBA) strictly enforce this provision. 
                   Any formulation relying on ingredients documented in First Schedule classical texts or sourced from Indian biological diversity 
-                  triggers automatic prior-art citations via CSIR's Traditional Knowledge Digital Library (TKDL).
+                  triggers automatic prior-art citations via CSIR&apos;s Traditional Knowledge Digital Library (TKDL).
                 </p>
               </div>
 
