@@ -15,10 +15,10 @@ class ClassificationResult(BaseModel):
 class FormulationEngine:
     """
     Deterministic rule-based engine to classify an Ayurvedic formulation
-    into its correct legal category based on the Drugs & Cosmetics Act 
+    into its correct legal category based on the Drugs & Cosmetics Act
     and the Biological Diversity Act.
     """
-    
+
     @staticmethod
     def classify(data: ClassificationInput) -> ClassificationResult:
         if data.is_first_schedule and not data.is_modified:
