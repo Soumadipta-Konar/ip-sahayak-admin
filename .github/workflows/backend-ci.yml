@@ -42,4 +42,4 @@ jobs:
         ENVIRONMENT: test
         API_KEY: dummy_key
       run: |
-        pytest backend/tests/ -v
+        cd backend && pytest tests/ -v
