@@ -1,19 +1,26 @@
-# Markdown files (per user request)
-*.md
-docs/
+# Python & Backend
+__pycache__/
+*.pyc
+venv/
+env/
+.env
+.env*.local
 
-# Dependencies
+# Frontend & Next.js
 node_modules/
+frontend/node_modules/
+Front_end/node_modules/
+.next/
+frontend/.next/
+Front_end/.next/
+out/
+frontend/out/
+Front_end/out/
+build/
+frontend/build/
+Front_end/build/
 .pnp
 .pnp.js
-
-# Next.js build output
-.next/
-out/
-
-# Production
-build/
-dist/
 
 # Debug logs
 npm-debug.log*
@@ -21,11 +28,21 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# Environment variables
-.env
-.env*.local
+# Documentation & Markdown (Confidential)
+docs/
+*.md
 
-# Editor directories
+# Data
+data/raw/
+data/processed/
+corpus_index.csv
+!data/.gitkeep
+
+# Docker
+.docker/
+docker-volume/
+
+# IDEs & OS
 .vscode/
 .idea/
 *.suo
@@ -33,8 +50,6 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw?
-
-# OS metadata
+.DS_Store
 Thumbs.db
 [Dd]esktop.ini
-.DS_Store
