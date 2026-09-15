@@ -1,6 +1,6 @@
-from typing import TypedDict, List, Annotated
-import operator
+from typing import TypedDict, List
 from langgraph.graph import StateGraph, END
+
 
 # Define the state for the LangGraph orchestrator
 class AgentState(TypedDict):
@@ -12,7 +12,9 @@ class AgentState(TypedDict):
     final_answer: str
     citations: List[dict]
 
+
 # --- Nodes ---
+
 
 def decompose_query(state: AgentState) -> dict:
     """Mock node: Decomposes the query into Concept, Factual, and Regulatory."""
@@ -24,13 +26,16 @@ def decompose_query(state: AgentState) -> dict:
     ]
     return {"decomposed_queries": decomposed}
 
+
 def retrieve_from_vector_db(state: AgentState) -> dict:
     """Mock node: Retrieves dense vectors from Qdrant."""
     return {"vector_results": ["Section 3(p) of Patents Act bars traditional knowledge."]}
 
+
 def retrieve_from_graph_db(state: AgentState) -> dict:
     """Mock node: Retrieves relationships from Neo4j."""
     return {"graph_results": ["Patents Act CITES Biological Diversity Act."]}
+
 
 def generate_final_answer(state: AgentState) -> dict:
     """Mock node: Fuses results and generates the final answer."""
@@ -44,7 +49,9 @@ def generate_final_answer(state: AgentState) -> dict:
     ]
     return {"final_answer": answer, "citations": citations}
 
+
 # --- Graph Definition ---
+
 
 workflow = StateGraph(AgentState)
 
@@ -64,6 +71,7 @@ workflow.add_edge("generate", END)
 
 # Compile the graph
 app = workflow.compile()
+
 
 def process_query_via_langgraph(query: str, jurisdiction: str) -> dict:
     """
