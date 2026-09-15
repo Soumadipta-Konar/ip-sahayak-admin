@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Sparkles, Calculator, Globe, Mic, MessageSquare, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Calculator, Globe, Mic, MessageSquare, CheckCircle2, Printer } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 
 export const Header: React.FC = () => {
@@ -60,6 +60,17 @@ export const Header: React.FC = () => {
               <span>Formulation Not Triaged</span>
             </Link>
           )}
+
+          {/* Download PDF Quick Action */}
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#001733] hover:bg-[#002d60] border border-blue-900 text-xs text-white font-medium transition-colors shadow-2xs"
+            title="Download or Print Statutory Dossier / Page as PDF"
+          >
+            <Printer className="w-3.5 h-3.5 text-blue-300" />
+            <span>Download PDF</span>
+          </button>
 
           {/* Language Selector (Bhashini) */}
           <div className="flex items-center gap-1.5 bg-[#001733] border border-blue-900 rounded-lg px-2.5 py-1">

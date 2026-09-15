@@ -16,7 +16,8 @@ import {
   Globe2, 
   CheckCircle2, 
   MessageSquare,
-  Building2
+  Building2,
+  Printer
 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { ClassificationResult } from '@/lib/types';
@@ -188,9 +189,20 @@ export const FormulationWizard: React.FC = () => {
         className="space-y-6"
       >
         <div className="p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-md relative overflow-hidden">
-          <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 uppercase tracking-wider mb-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span>Statutory Classification Complete &bull; Case Dossier Generated</span>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 uppercase tracking-wider">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>Statutory Classification Complete &bull; Case Dossier Generated</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#002147] text-xs font-bold border border-blue-200 flex items-center gap-1.5 shadow-2xs transition-colors print:hidden"
+              title="Save or Print Statutory Dossier as PDF"
+            >
+              <Printer className="w-3.5 h-3.5 text-blue-700" />
+              <span>Download PDF Dossier</span>
+            </button>
           </div>
 
           <h3 className="text-xl sm:text-2xl font-black text-[#002147] mb-1">
@@ -248,7 +260,7 @@ export const FormulationWizard: React.FC = () => {
           </div>
 
           {/* Action Row */}
-          <div className="mt-8 pt-6 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <div className="mt-8 pt-6 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 print:hidden">
             <button
               type="button"
               onClick={restartTriage}
@@ -274,6 +286,16 @@ export const FormulationWizard: React.FC = () => {
               >
                 <FileText className="w-3.5 h-3.5" />
                 <span>Statute Inspector</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="px-4 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#002147] text-xs font-bold border border-blue-300 shadow-2xs flex items-center gap-2 transition-all"
+                title="Download or Print Statutory Dossier as PDF"
+              >
+                <Printer className="w-4 h-4 text-blue-700" />
+                <span>Download / Print PDF</span>
               </button>
 
               <Link

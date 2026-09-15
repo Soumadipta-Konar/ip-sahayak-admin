@@ -15,7 +15,8 @@ import {
   ArrowRight,
   Volume2,
   VolumeX,
-  Globe2
+  Globe2,
+  Printer
 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { ChatMessage, StatutoryCitation } from '@/lib/types';
@@ -341,7 +342,18 @@ export const ChatContainer: React.FC = () => {
               : 'Live Statutory Intelligence Agent (CSIR-TKDL & BDA 2023)'}
           </span>
         </div>
-        <JurisdictionToggle value={jurisdiction} onChange={setJurisdiction} />
+        <div className="flex items-center gap-2 print:hidden">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="px-3 py-1.5 rounded-lg bg-white hover:bg-blue-50 text-[#002147] text-xs font-bold border border-slate-300 hover:border-blue-400 shadow-2xs flex items-center gap-1.5 transition-colors"
+            title="Download or Print Consultation Transcript as PDF"
+          >
+            <Printer className="w-3.5 h-3.5 text-blue-700" />
+            <span>Download PDF</span>
+          </button>
+          <JurisdictionToggle value={jurisdiction} onChange={setJurisdiction} />
+        </div>
       </div>
 
       {/* 3. Messages Stream */}
@@ -403,7 +415,7 @@ export const ChatContainer: React.FC = () => {
 
               {/* Audio Listen & Facilitator Footer */}
               {msg.sender === 'assistant' && (
-                <div className="mt-3.5 pt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 border-t border-slate-200/80">
+                <div className="mt-3.5 pt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 border-t border-slate-200/80 print:hidden">
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
@@ -476,7 +488,7 @@ export const ChatContainer: React.FC = () => {
       </div>
 
       {/* 4. Suggested Prompts */}
-      <div className={`px-4 py-2.5 border-t flex items-center gap-2 overflow-x-auto custom-scrollbar ${
+      <div className={`px-4 py-2.5 border-t flex items-center gap-2 overflow-x-auto custom-scrollbar print:hidden ${
         isIntl ? 'bg-indigo-50/40 border-indigo-100' : 'bg-slate-50 border-slate-200'
       }`}>
         <span className="text-[11px] text-slate-500 whitespace-nowrap font-bold flex items-center gap-1">
@@ -499,7 +511,7 @@ export const ChatContainer: React.FC = () => {
       </div>
 
       {/* 5. Input Bar with Bhashini AudioRecorder */}
-      <div className="p-3 sm:p-4 bg-white border-t border-slate-200 flex items-center gap-2">
+      <div className="p-3 sm:p-4 bg-white border-t border-slate-200 flex items-center gap-2 print:hidden">
         <AudioRecorder onTranscription={(transcription) => handleSend(transcription)} lang={language} />
 
         <input

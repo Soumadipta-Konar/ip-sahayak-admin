@@ -86,17 +86,32 @@ html.high-contrast textarea {
   background: #64748b;
 }
 
-/* Clean Official Print Stylesheet for Dossier Export */
+/* Clean Official Print Stylesheet for Statutory Dossier & Consultation PDF Export */
 @media print {
+  @page {
+    margin: 12mm 15mm;
+    size: auto;
+  }
   body {
     background: #ffffff !important;
-    color: #000000 !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
   }
   .print\:hidden {
     display: none !important;
   }
-  aside {
-    border: 1px solid #000000 !important;
+  /* Remove noisy background gradients and shadows */
+  * {
     box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  /* Ensure statutory cards and sidebars print with neat borders */
+  aside, .border {
+    border: 1px solid #cbd5e1 !important;
+  }
+  /* Avoid breaking cards across pages */
+  .rounded-2xl, .rounded-xl {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }
