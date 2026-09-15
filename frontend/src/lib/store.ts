@@ -14,6 +14,8 @@ interface AppState {
   setIsEscalationOpen: (open: boolean) => void;
   classificationState: Partial<ClassificationResult> | null;
   setClassificationState: (state: Partial<ClassificationResult> | null) => void;
+  sessionId: string;
+  resetSessionId: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -29,4 +31,6 @@ export const useAppStore = create<AppState>((set) => ({
   setIsEscalationOpen: (isEscalationOpen) => set({ isEscalationOpen }),
   classificationState: null,
   setClassificationState: (classificationState) => set({ classificationState }),
+  sessionId: 'session_' + Math.random().toString(36).substring(7),
+  resetSessionId: () => set({ sessionId: 'session_' + Math.random().toString(36).substring(7) }),
 }));

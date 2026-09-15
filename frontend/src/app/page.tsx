@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ChatContainer } from '@/components/chat/ChatContainer';
+import { SessionContextSidebar } from '@/components/chat/SessionContextSidebar';
 import { Sparkles, Calculator, BookOpen, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 
@@ -88,9 +89,17 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Main Interactive Statutory AI Copilot & Voice Interface */}
-      <div className="flex-1 flex flex-col min-h-[580px]">
-        <ChatContainer />
+      {/* Main Workspace: 2-Column Desktop Grid (Chat Copilot + Session Context Sidebar) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 items-start">
+        {/* Left Column: Interactive Legal Copilot & Voice Interface */}
+        <div className="lg:col-span-8 flex flex-col min-h-[620px]">
+          <ChatContainer />
+        </div>
+
+        {/* Right Column: Formulation Classification Sidebar / Session Context */}
+        <div className="lg:col-span-4 sticky top-16">
+          <SessionContextSidebar />
+        </div>
       </div>
     </div>
   );

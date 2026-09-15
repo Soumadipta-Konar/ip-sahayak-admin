@@ -5,9 +5,11 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v
 export async function askLegalQuestion(
   query: string, 
   jurisdiction: Jurisdiction, 
-  language: string = 'en'
+  language: string = 'en',
+  sessionId?: string
 ): Promise<ChatMessage> {
   const jurParam: 'IN' | 'INTL' = jurisdiction === 'INTL' ? 'INTL' : 'IN';
+  const effectiveSessionId = sessionId || 'session_' + Math.random().toString(36).substring(7);
 
   try {
     const res = await fetch(`${API_BASE}/ask`, {
@@ -17,7 +19,7 @@ export async function askLegalQuestion(
         query,
         jurisdiction: jurParam,
         language,
-        session_id: 'session_' + Math.random().toString(36).substring(7),
+        session_id: effectiveSessionId,
       }),
     });
 

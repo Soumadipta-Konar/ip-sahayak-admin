@@ -14,26 +14,27 @@ import {
   CheckCircle2, 
   ArrowRight,
   Volume2,
-  VolumeX
+  VolumeX,
+  Globe2
 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { ChatMessage, StatutoryCitation } from '@/lib/types';
 import { askLegalQuestion } from '@/lib/apiClient';
 import { JurisdictionToggle } from './JurisdictionToggle';
 import { AudioRecorder } from '../voice/AudioRecorder';
+import { MarkdownContent } from './MarkdownContent';
 
 const WELCOME_MESSAGES: Record<string, string> = {
   en: `### Namaste & Welcome to IP-SAKTI Sahayak (SIH 045)\n\nI am your official AI statutory legal copilot grounded in **The Indian Patents Act (1970)**, **The Biological Diversity (Amendment) Act (2023)**, **CSIR Traditional Knowledge Digital Library (TKDL)**, and international botanical drug regulatory frameworks.\n\nHow may I evaluate your Ayurvedic innovation today?`,
   bn: `### নমস্কার এবং আইপি-শক্তি সহায়ক (SIH 045)-এ আপনাকে স্বাগতম\n\nআমি **ভারতীয় পেটেন্ট আইন (১৯৭০)**, **জৈব বৈচিত্র্য (সংশোধন) আইন (২০২৩)**, এবং **সিএসআইআর ঐতিহ্যবাহী জ্ঞান ডিজিটাল লাইব্রেরি (TKDL)**-এর ওপর ভিত্তি করে তৈরি আপনার সরকারি এআই আইনি সহকারী।\n\nআজ আমি কীভাবে আপনার আয়ুর্বেদিক উদ্ভাবন বা ফর্মুলেশনের মূল্যায়ন করতে পারি?`,
   hi: `### नमस्ते और आईपी-शक्ति सहायक (SIH 045) में आपका स्वागत है\n\nमैं **भारतीय पेटेंट अधिनियम (1970)**, **जैविक विविधता (संशोधन) अधिनियम (2023)**, और **सीएसआईआर पारंपरिक ज्ञान डिजिटल लाइब्रेरी (TKDL)** पर आधारित आपका आधिकारिक एआई कानूनी सहायक हूँ।\n\nआज मैं आपके आयुर्वेदिक नवाचार या उत्पाद का मूल्यांकन कैसे कर सकता हूँ?`,
-  ml: `### നമസ്കാരം, ഐപി-ശക്തി സഹായക്കിലേക്ക് (SIH 045) സ്വാগതം\n\n**ഇന്ത്യൻ പേറ്റന്റ് നിയമം (1970)**, **ജൈവ വൈവിധ്യ (ഭേദഗതി) നിയമം (2023)**, **CSIR പരമ്പരാഗത വിജ്ഞാന ഡിജിറ്റൽ ലൈബ്രറി (TKDL)** എന്നിവ അടിസ്ഥാനമാക്കിയുള്ള നിങ്ങളുടെ ഔദ്യോഗിക AI നിയമ സഹായിയാണ് ഞാൻ.\n\nഇന്ന് നിങ്ങളുടെ ആയുർവേദ ഉൽപ്പന്നം എങ്ങനെ വിലയിരുത്താം?`,
+  ml: `### നമസ്കാരം, ഐപി-ശക്തി സഹായക്കിലേക്ക് (SIH 045) സ്വാഗതം\n\n**ഇന്ത്യൻ പേറ്റന്റ് നിയമം (1970)**, **ജൈവ വൈവിധ്യ (ഭേദഗതി) നിയമം (2023)**, **CSIR പരമ്പരാഗത വിജ്ഞാന ഡിജിറ്റൽ ലൈബ്രറി (TKDL)** എന്നിവ അടിസ്ഥാനമാക്കിയുള്ള നിങ്ങളുടെ ഔദ്യോഗിക AI നിയമ സഹായിയാണ് ഞാൻ.\n\nഇന്ന് നിങ്ങളുടെ ആയുർവേദ ഉൽപ്പന്നം എങ്ങനെ വിലയിരുത്താം?`,
   ta: `### வணக்கம், ஐபி-சக்தி சஹாயக்கிற்கு (SIH 045) நல்வரவு\n\nநான் **இந்திய காப்புரிமைச் சட்டம் (1970)**, **உயிரியல் பன்முகத்தன்மை சட்டம் (2023)**, மற்றும் **CSIR பாரம்பரிய அறிவு டிஜிட்டல் நூலகம் (TKDL)** அடிப்படையிலான உங்கள் சட்ட உதவியாளர்.\n\nஇன்று உங்கள் ஆயுர்வேத கண்டுபிடிப்பை எவ்வாறு மதிப்பீடு செய்யலாம்?`,
   te: `### నమస్కారం, ఐపీ-శక్తి సహాయక్‌కు (SIH 045) స్వాగతం\n\nనేను **భారత పేటెంట్ చట్టం (1970)**, **జీవ వైవిధ్య చట్టం (2023)**, మరియు **CSIR సాంప్రదాయ జ్ఞాన డిజిటల్ లైబ్రరీ (TKDL)** ఆధారిత మీ అధికారిక AI చట్టపరమైన సహచరుడిని.\n\nఈరోజు మీ ఆయుర్వేద ఉత్పత్తుల పేటెంట్ అర్హతను ఎలా అంచనా వేయగలను?`,
 };
 
 function translateToIndicSpeech(text: string, targetLang: string): string {
   if (targetLang === 'bn') {
-    // If text already has Bengali characters, return as is
     if (/[\u0980-\u09FF]/.test(text)) return text;
 
     let bn = text;
@@ -76,12 +77,15 @@ export const ChatContainer: React.FC = () => {
     language, 
     setSelectedCitation, 
     setIsEscalationOpen,
-    classificationState 
+    classificationState,
+    sessionId 
   } = useAppStore();
   
   const [inputQuery, setInputQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
+
+  const isIntl = jurisdiction === 'INTL';
 
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -146,7 +150,6 @@ export const ChatContainer: React.FC = () => {
 
     window.speechSynthesis.cancel();
 
-    // 1. Strip markdown characters and citations
     let cleanText = text
       .replace(/#{1,6}\s+/g, '')
       .replace(/\*\*(.*?)\*\*/g, '$1')
@@ -157,12 +160,10 @@ export const ChatContainer: React.FC = () => {
       .replace(/[•\*\-]\s+/g, ', ')
       .trim();
 
-    // 2. Ensure text matches the target language (especially Bengali/Hindi)
     cleanText = translateToIndicSpeech(cleanText, language);
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
 
-    // Map language code to browser Indic locale
     const localeMap: Record<string, string> = {
       hi: 'hi-IN',
       ml: 'ml-IN',
@@ -175,7 +176,6 @@ export const ChatContainer: React.FC = () => {
     utterance.lang = localeMap[language] || 'en-IN';
     utterance.rate = 0.95;
 
-    // Find a matching voice in the browser (e.g. Google Bangla or Microsoft Bengali)
     const voices = window.speechSynthesis.getVoices();
     const targetLangCode = localeMap[language] || 'en-IN';
     const targetLangShort = language;
@@ -225,12 +225,11 @@ export const ChatContainer: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Prepend active classification context if available to ground AI
       const contextualizedQuery = classificationState?.category
         ? `[Statutory Context: Product classified as "${classificationState.category}", Statute: "${classificationState.statute}"] ${query}`
         : query;
 
-      const response = await askLegalQuestion(contextualizedQuery, jurisdiction, language);
+      const response = await askLegalQuestion(contextualizedQuery, jurisdiction, language, sessionId);
       setMessages((prev) => [...prev, response]);
     } catch (err) {
       console.error(err);
@@ -239,7 +238,6 @@ export const ChatContainer: React.FC = () => {
     }
   };
 
-  // Sample queries localized by language
   const sampleQueries = language === 'bn'
     ? [
         "আদা এবং মধুর কাশির সিরাপ কি পেটেন্ট করা সম্ভব?",
@@ -253,6 +251,13 @@ export const ChatContainer: React.FC = () => {
         "अश्वगंधा के लिए BDA 2023 के तहत ABS नियम क्या हैं?",
         "क्या FSSAI 2022 के तहत आयुर्वेद-आहार को पेटेंट किया जा सकता है?",
         "शास्त्रीय नुस्खे पर धारा 3(p) कैसे लागू होती है?",
+      ]
+    : isIntl
+    ? [
+        "How does US FDA Botanical Drug Guidance regulate Ayurvedic IND/NDA?",
+        "What are WIPO GRATK Treaty 2024 mandatory patent disclosure rules?",
+        "How does EMA THMPD 30-year traditional use rule apply to Ayurvedic exports?",
+        "Can an Indian classical formula qualify for PCT international patent filing?",
       ]
     : classificationState?.category?.includes('Classical')
     ? [
@@ -272,10 +277,14 @@ export const ChatContainer: React.FC = () => {
     ? "পেটেন্টযোগ্যতা, ধারা ৩, TKDL, বা ABS সম্মতি সম্পর্কে বাংলায় অথবা ইংরেজিতে প্রশ্ন করুন..."
     : language === 'hi'
     ? "पेटेंट योग्यता, धारा 3, TKDL या ABS नियमों के बारे में हिन्दी या अंग्रेजी में पूछें..."
+    : isIntl
+    ? "Ask about WIPO GRATK, PCT, US FDA Botanical Drug guidance, or EMA THMPD in English..."
     : `Ask about patentability, Section 3 bars, TKDL, or ABS compliance in ${language.toUpperCase()} or English...`;
 
   return (
-    <div className="flex-1 flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm relative">
+    <div className={`flex-1 flex flex-col bg-white rounded-2xl border overflow-hidden shadow-sm relative transition-colors ${
+      isIntl ? 'border-indigo-300 shadow-indigo-100/40' : 'border-slate-200'
+    }`}>
       {/* 1. Active Formulation Dossier / Triage Recommendation Banner */}
       {classificationState ? (
         <div className="bg-emerald-50 border-b border-emerald-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
@@ -316,12 +325,20 @@ export const ChatContainer: React.FC = () => {
         </div>
       )}
 
-      {/* 2. Top Toolbar */}
-      <div className="p-3.5 sm:p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-slate-50/80">
+      {/* 2. Top Toolbar with Jurisdiction Themeing */}
+      <div className={`p-3.5 sm:p-4 border-b flex flex-wrap items-center justify-between gap-3 transition-colors ${
+        isIntl ? 'bg-indigo-50/70 border-indigo-200' : 'bg-slate-50/80 border-slate-200'
+      }`}>
         <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse" />
-          <span className="text-xs font-bold text-[#002147]">
-            Live Statutory Intelligence Agent (CSIR-TKDL & BDA 2023)
+          <div className={`w-2.5 h-2.5 rounded-full animate-pulse ${
+            isIntl ? 'bg-indigo-600' : 'bg-emerald-600'
+          }`} />
+          <span className={`text-xs font-bold ${
+            isIntl ? 'text-indigo-950' : 'text-[#002147]'
+          }`}>
+            {isIntl 
+              ? 'International IPR & Botanical Drug Frameworks (WIPO GRATK & US FDA CDER)' 
+              : 'Live Statutory Intelligence Agent (CSIR-TKDL & BDA 2023)'}
           </span>
         </div>
         <JurisdictionToggle value={jurisdiction} onChange={setJurisdiction} />
@@ -337,23 +354,28 @@ export const ChatContainer: React.FC = () => {
             className={`flex gap-3.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             {msg.sender === 'assistant' && (
-              <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-[#002147] flex-shrink-0 mt-1 shadow-xs">
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-1 shadow-xs border ${
+                isIntl ? 'bg-indigo-50 border-indigo-200 text-indigo-900' : 'bg-blue-50 border-blue-200 text-[#002147]'
+              }`}>
                 <Bot className="w-4 h-4" />
               </div>
             )}
 
             <div className={`max-w-2xl rounded-2xl p-4 sm:p-5 text-xs sm:text-sm leading-relaxed ${
               msg.sender === 'user'
-                ? 'bg-[#002147] text-white rounded-tr-none shadow-sm'
-                : 'bg-slate-50 border border-slate-200 text-slate-800 rounded-tl-none shadow-xs'
+                ? isIntl 
+                  ? 'bg-indigo-900 text-white rounded-tr-none shadow-sm' 
+                  : 'bg-[#002147] text-white rounded-tr-none shadow-sm'
+                : isIntl
+                  ? 'bg-indigo-50/30 border border-indigo-100 text-slate-800 rounded-tl-none shadow-xs'
+                  : 'bg-slate-50 border border-slate-200 text-slate-800 rounded-tl-none shadow-xs'
             }`}>
-              <div className="max-w-none text-xs sm:text-sm">
-                {msg.text.split('\n\n').map((paragraph, idx) => (
-                  <p key={idx} className="mb-2 last:mb-0">
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
+              {/* Parse Markdown & Inline Citations */}
+              {msg.sender === 'assistant' ? (
+                <MarkdownContent content={msg.text} />
+              ) : (
+                <p className="whitespace-pre-wrap">{msg.text}</p>
+              )}
 
               {/* Citations Badges */}
               {msg.citations && msg.citations.length > 0 && (
@@ -383,7 +405,6 @@ export const ChatContainer: React.FC = () => {
               {msg.sender === 'assistant' && (
                 <div className="mt-3.5 pt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 border-t border-slate-200/80">
                   <div className="flex items-center gap-3">
-                    {/* Audio Listen / Stop Button */}
                     <button
                       type="button"
                       onClick={() => handleToggleSpeech(msg.id, msg.text)}
@@ -455,7 +476,9 @@ export const ChatContainer: React.FC = () => {
       </div>
 
       {/* 4. Suggested Prompts */}
-      <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-200 flex items-center gap-2 overflow-x-auto custom-scrollbar">
+      <div className={`px-4 py-2.5 border-t flex items-center gap-2 overflow-x-auto custom-scrollbar ${
+        isIntl ? 'bg-indigo-50/40 border-indigo-100' : 'bg-slate-50 border-slate-200'
+      }`}>
         <span className="text-[11px] text-slate-500 whitespace-nowrap font-bold flex items-center gap-1">
           <HelpCircle className="w-3 h-3 text-amber-600" />
           <span>{language === 'bn' ? 'সাধারণ প্রশ্নসমূহ:' : language === 'hi' ? 'सामान्य प्रश्न:' : 'Quick Inquiries:'}</span>
@@ -464,7 +487,11 @@ export const ChatContainer: React.FC = () => {
           <button
             key={sIdx}
             onClick={() => handleSend(sample)}
-            className="text-[11px] px-3 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-[#002147] hover:border-blue-400 hover:bg-blue-50/40 whitespace-nowrap transition-all shadow-2xs font-medium"
+            className={`text-[11px] px-3 py-1 rounded-lg bg-white border text-slate-700 whitespace-nowrap transition-all shadow-2xs font-medium ${
+              isIntl 
+                ? 'border-indigo-200 hover:text-indigo-900 hover:border-indigo-400 hover:bg-indigo-50/40' 
+                : 'border-slate-200 hover:text-[#002147] hover:border-blue-400 hover:bg-blue-50/40'
+            }`}
           >
             {sample}
           </button>
@@ -481,14 +508,18 @@ export const ChatContainer: React.FC = () => {
           onChange={(e) => setInputQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
           placeholder={placeholderText}
-          className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#002147] focus:bg-white transition-colors"
+          className={`flex-1 bg-slate-50 border rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white transition-colors ${
+            isIntl ? 'border-indigo-200 focus:border-indigo-600' : 'border-slate-300 focus:border-[#002147]'
+          }`}
         />
 
         <button
           type="button"
           onClick={() => handleSend()}
           disabled={!inputQuery.trim() || isLoading}
-          className="p-2.5 rounded-xl bg-[#002147] hover:bg-[#001733] disabled:opacity-40 text-white font-semibold shadow-sm transition-all flex-shrink-0"
+          className={`p-2.5 rounded-xl text-white font-semibold shadow-sm transition-all flex-shrink-0 disabled:opacity-40 ${
+            isIntl ? 'bg-indigo-900 hover:bg-indigo-800' : 'bg-[#002147] hover:bg-[#001733]'
+          }`}
           aria-label="Send Query"
         >
           <Send className="w-4 h-4" />
