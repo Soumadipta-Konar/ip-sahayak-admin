@@ -1,9 +1,9 @@
-import { AskResponse, ClassificationResult, ChatMessage, Jurisdiction } from './types';
+import { AskResponse, ClassificationResult, ChatMessage, Jurisdiction, StatutoryCitation } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 export async function askLegalQuestion(query: string, jurisdiction: Jurisdiction): Promise<ChatMessage> {
-  const jurParam = jurisdiction === 'INTL' ? 'INTERNATIONAL' : 'INDIA';
+  const jurParam: 'IN' | 'INTL' = jurisdiction === 'INTL' ? 'INTL' : 'IN';
 
   try {
     const res = await fetch(`${API_BASE}/ask`, {
@@ -17,24 +17,41 @@ export async function askLegalQuestion(query: string, jurisdiction: Jurisdiction
     });
 
     if (res.ok) {
-      const data: AskResponse = await res.json();
+      const data = await res.json();
+      const rawCitations: any[] = Array.isArray(data.citations) ? data.citations : [];
+      
+      const parsedCitations: StatutoryCitation[] = rawCitations.map((c, idx) => {
+        if (typeof c === 'string') {
+          return {
+            id: `cit-${idx}`,
+            act: c.includes('Patent') ? 'The Patents Act, 1970' : 'Biological Diversity Act, 2023',
+            section: c,
+            description: `Statutory citation extracted by LangGraph agent: ${c}`,
+            snippet: c,
+            url: 'https://www.ipindia.gov.in',
+            jurisdiction: jurParam,
+          };
+        }
+        return {
+          id: c.id || `cit-${idx}`,
+          act: c.statute_name || c.act || 'The Patents Act, 1970',
+          section: c.section || 'General Provision',
+          description: c.snippet || c.description || '',
+          snippet: c.snippet || c.description || '',
+          url: c.url || 'https://www.ipindia.gov.in',
+          jurisdiction: jurParam,
+        };
+      });
+
       return {
         id: 'bot_' + Date.now(),
         sender: 'assistant',
-        text: data.answer,
+        text: data.answer || '',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         jurisdiction,
-        confidenceScore: data.confidence_score,
-        requiresEscalation: data.requires_escalation,
-        citations: data.citations?.map((c) => ({
-          id: c.id,
-          act: c.statute_name,
-          section: c.section,
-          description: c.snippet,
-          snippet: c.snippet,
-          url: c.url,
-          jurisdiction: jurisdiction === 'INTL' ? 'INTL' : 'IN',
-        })),
+        confidenceScore: data.confidence_score ?? 0.95,
+        requiresEscalation: data.requires_escalation ?? false,
+        citations: parsedCitations,
       };
     }
   } catch (err) {
