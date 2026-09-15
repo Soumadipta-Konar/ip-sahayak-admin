@@ -14,14 +14,60 @@ import {
   CheckCircle2, 
   ArrowRight,
   Volume2,
-  VolumeX,
-  Radio
+  VolumeX
 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { ChatMessage, StatutoryCitation } from '@/lib/types';
 import { askLegalQuestion } from '@/lib/apiClient';
 import { JurisdictionToggle } from './JurisdictionToggle';
 import { AudioRecorder } from '../voice/AudioRecorder';
+
+const WELCOME_MESSAGES: Record<string, string> = {
+  en: `### Namaste & Welcome to IP-SAKTI Sahayak (SIH 045)\n\nI am your official AI statutory legal copilot grounded in **The Indian Patents Act (1970)**, **The Biological Diversity (Amendment) Act (2023)**, **CSIR Traditional Knowledge Digital Library (TKDL)**, and international botanical drug regulatory frameworks.\n\nHow may I evaluate your Ayurvedic innovation today?`,
+  bn: `### নমস্কার এবং আইপি-শক্তি সহায়ক (SIH 045)-এ আপনাকে স্বাগতম\n\nআমি **ভারতীয় পেটেন্ট আইন (১৯৭০)**, **জৈব বৈচিত্র্য (সংশোধন) আইন (২০২৩)**, এবং **সিএসআইআর ঐতিহ্যবাহী জ্ঞান ডিজিটাল লাইব্রেরি (TKDL)**-এর ওপর ভিত্তি করে তৈরি আপনার সরকারি এআই আইনি সহকারী।\n\nআজ আমি কীভাবে আপনার আয়ুর্বেদিক উদ্ভাবন বা ফর্মুলেশনের মূল্যায়ন করতে পারি?`,
+  hi: `### नमस्ते और आईपी-शक्ति सहायक (SIH 045) में आपका स्वागत है\n\nमैं **भारतीय पेटेंट अधिनियम (1970)**, **जैविक विविधता (संशोधन) अधिनियम (2023)**, और **सीएसआईआर पारंपरिक ज्ञान डिजिटल लाइब्रेरी (TKDL)** पर आधारित आपका आधिकारिक एआई कानूनी सहायक हूँ।\n\nआज मैं आपके आयुर्वेदिक नवाचार या उत्पाद का मूल्यांकन कैसे कर सकता हूँ?`,
+  ml: `### നമസ്കാരം, ഐപി-ശക്തി സഹായക്കിലേക്ക് (SIH 045) സ്വാগതം\n\n**ഇന്ത്യൻ പേറ്റന്റ് നിയമം (1970)**, **ജൈവ വൈവിധ്യ (ഭേദഗതി) നിയമം (2023)**, **CSIR പരമ്പരാഗത വിജ്ഞാന ഡിജിറ്റൽ ലൈബ്രറി (TKDL)** എന്നിവ അടിസ്ഥാനമാക്കിയുള്ള നിങ്ങളുടെ ഔദ്യോഗിക AI നിയമ സഹായിയാണ് ഞാൻ.\n\nഇന്ന് നിങ്ങളുടെ ആയുർവേദ ഉൽപ്പന്നം എങ്ങനെ വിലയിരുത്താം?`,
+  ta: `### வணக்கம், ஐபி-சக்தி சஹாயக்கிற்கு (SIH 045) நல்வரவு\n\nநான் **இந்திய காப்புரிமைச் சட்டம் (1970)**, **உயிரியல் பன்முகத்தன்மை சட்டம் (2023)**, மற்றும் **CSIR பாரம்பரிய அறிவு டிஜிட்டல் நூலகம் (TKDL)** அடிப்படையிலான உங்கள் சட்ட உதவியாளர்.\n\nஇன்று உங்கள் ஆயுர்வேத கண்டுபிடிப்பை எவ்வாறு மதிப்பீடு செய்யலாம்?`,
+  te: `### నమస్కారం, ఐపీ-శక్తి సహాయక్‌కు (SIH 045) స్వాగతం\n\nనేను **భారత పేటెంట్ చట్టం (1970)**, **జీవ వైవిధ్య చట్టం (2023)**, మరియు **CSIR సాంప్రదాయ జ్ఞాన డిజిటల్ లైబ్రరీ (TKDL)** ఆధారిత మీ అధికారిక AI చట్టపరమైన సహచరుడిని.\n\nఈరోజు మీ ఆయుర్వేద ఉత్పత్తుల పేటెంట్ అర్హతను ఎలా అంచనా వేయగలను?`,
+};
+
+function translateToIndicSpeech(text: string, targetLang: string): string {
+  if (targetLang === 'bn') {
+    // If text already has Bengali characters, return as is
+    if (/[\u0980-\u09FF]/.test(text)) return text;
+
+    let bn = text;
+    bn = bn.replace(/Namaste & Welcome to IP-SAKTI Sahayak \(SIH 045\)/gi, 'নমস্কার, আইপি-শক্তি সহায়ক এসআইএইচ ০৪৫ এ আপনাকে স্বাগতম।');
+    bn = bn.replace(/I am your official AI statutory legal copilot grounded in/gi, 'আমি আপনার সরকারি এআই আইনি সহকারী, যা ভিত্তি করে তৈরি');
+    bn = bn.replace(/The Indian Patents Act \(1970\)/gi, 'ভারতীয় পেটেন্ট আইন ১৯৭০');
+    bn = bn.replace(/The Biological Diversity \(Amendment\) Act \(2023\)/gi, 'জৈব বৈচিত্র্য আইন ২০২৩');
+    bn = bn.replace(/CSIR Traditional Knowledge Digital Library \(TKDL\)/gi, 'সিএসআইআর ঐতিহ্যবাহী জ্ঞান ডিজিটাল লাইব্রেরি');
+    bn = bn.replace(/and international botanical drug regulatory frameworks\./gi, 'এবং আন্তর্জাতিক ভেষজ ঔষধ নিয়ন্ত্রক কাঠামো।');
+    bn = bn.replace(/How may I evaluate your Ayurvedic innovation today\?/gi, 'আজ আমি কীভাবে আপনার আয়ুর্বেদিক উদ্ভাবনের মূল্যায়ন করতে পারি?');
+    bn = bn.replace(/Legal Assessment: Patentability of Ayurvedic Formulation/gi, 'আইনি মূল্যায়ন: আয়ুর্বেদিক ফর্মুলেশনের পেটেন্ট যোগ্যতা');
+    bn = bn.replace(/Under Section 3\(p\) of the Indian Patents Act, 1970/gi, 'ভারতীয় পেটেন্ট আইন ১৯৭০ এর ধারা ৩(p) অনুযায়ী');
+    bn = bn.replace(/statutorily barred from patent eligibility/gi, 'আইনগতভাবে পেটেন্ট পাওয়ার সম্পূর্ণ অযোগ্য');
+    bn = bn.replace(/Traditional Knowledge Bar \(Sec 3\(p\)\)/gi, 'ঐতিহ্যবাহী জ্ঞান সংক্রান্ত বাধা');
+    bn = bn.replace(/Mere Admixture Bar \(Sec 3\(e\)\)/gi, 'সাধারণ মিশ্রণ সংক্রান্ত বাধা');
+    bn = bn.replace(/Recommendation:/gi, 'পরামর্শ:');
+    bn = bn.replace(/Statutory Guidance for Ayurvedic Innovation/gi, 'আয়ুর্বেদিক উদ্ভাবনের বৈধানিক নির্দেশনা');
+    return bn;
+  }
+
+  if (targetLang === 'hi') {
+    if (/[\u0900-\u097F]/.test(text)) return text;
+
+    let hi = text;
+    hi = hi.replace(/Namaste & Welcome to IP-SAKTI Sahayak/gi, 'नमस्ते, आईपी-शक्ति सहायक में आपका स्वागत है।');
+    hi = hi.replace(/I am your official AI statutory legal copilot/gi, 'मैं आपका आधिकारिक एआई कानूनी सहायक हूँ।');
+    hi = hi.replace(/The Indian Patents Act \(1970\)/gi, 'भारतीय पेटेंट अधिनियम 1970');
+    hi = hi.replace(/The Biological Diversity \(Amendment\) Act \(2023\)/gi, 'जैविक विविधता संशोधन अधिनियम 2023');
+    hi = hi.replace(/Legal Assessment: Patentability of Ayurvedic Formulation/gi, 'कानूनी मूल्यांकन: आयुर्वेदिक फॉर्मूलेशन की पेटेंट योग्यता');
+    return hi;
+  }
+
+  return text;
+}
 
 export const ChatContainer: React.FC = () => {
   const { 
@@ -41,7 +87,7 @@ export const ChatContainer: React.FC = () => {
     {
       id: 'welcome',
       sender: 'assistant',
-      text: `### Namaste & Welcome to IP-SAKTI Sahayak (SIH 045)\n\nI am your official AI statutory legal copilot grounded in **The Indian Patents Act (1970)**, **The Biological Diversity (Amendment) Act (2023)**, **CSIR Traditional Knowledge Digital Library (TKDL)**, and international botanical drug regulatory frameworks.\n\nHow may I evaluate your Ayurvedic innovation today?`,
+      text: WELCOME_MESSAGES[language] || WELCOME_MESSAGES['en'],
       timestamp: '10:00 AM',
       jurisdiction: 'IN',
       confidenceScore: 0.98,
@@ -66,6 +112,17 @@ export const ChatContainer: React.FC = () => {
     },
   ]);
 
+  // Update welcome message dynamically whenever user changes language
+  useEffect(() => {
+    setMessages((prev) => 
+      prev.map((msg) => 
+        msg.id === 'welcome' 
+          ? { ...msg, text: WELCOME_MESSAGES[language] || WELCOME_MESSAGES['en'] }
+          : msg
+      )
+    );
+  }, [language]);
+
   // Clean up speech synthesis on component unmount
   useEffect(() => {
     return () => {
@@ -81,18 +138,16 @@ export const ChatContainer: React.FC = () => {
       return;
     }
 
-    // Toggle off if already speaking this message
     if (speakingMessageId === msgId) {
       window.speechSynthesis.cancel();
       setSpeakingMessageId(null);
       return;
     }
 
-    // Cancel any previous speech
     window.speechSynthesis.cancel();
 
-    // Clean markdown characters and citations for smooth, natural audio readout
-    const cleanText = text
+    // 1. Strip markdown characters and citations
+    let cleanText = text
       .replace(/#{1,6}\s+/g, '')
       .replace(/\*\*(.*?)\*\*/g, '$1')
       .replace(/\*(.*?)\*/g, '$1')
@@ -101,6 +156,9 @@ export const ChatContainer: React.FC = () => {
       .replace(/§\s*/g, 'Section ')
       .replace(/[•\*\-]\s+/g, ', ')
       .trim();
+
+    // 2. Ensure text matches the target language (especially Bengali/Hindi)
+    cleanText = translateToIndicSpeech(cleanText, language);
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
 
@@ -115,14 +173,25 @@ export const ChatContainer: React.FC = () => {
     };
 
     utterance.lang = localeMap[language] || 'en-IN';
-    utterance.rate = 0.95; // Official, clear pace
+    utterance.rate = 0.95;
 
-    // Look for matching voice
+    // Find a matching voice in the browser (e.g. Google Bangla or Microsoft Bengali)
     const voices = window.speechSynthesis.getVoices();
-    const matchedVoice = voices.find((v) => 
-      v.lang.toLowerCase().startsWith(utterance.lang.toLowerCase()) || 
-      v.lang.toLowerCase().replace('_', '-').startsWith(utterance.lang.toLowerCase())
-    );
+    const targetLangCode = localeMap[language] || 'en-IN';
+    const targetLangShort = language;
+
+    const matchedVoice = voices.find((v) => {
+      const vLang = v.lang.toLowerCase().replace('_', '-');
+      const vName = v.name.toLowerCase();
+      if (targetLangShort === 'bn') {
+        return vLang.startsWith('bn') || vName.includes('bengali') || vName.includes('bangla');
+      }
+      if (targetLangShort === 'hi') {
+        return vLang.startsWith('hi') || vName.includes('hindi');
+      }
+      return vLang.startsWith(targetLangCode.toLowerCase());
+    });
+
     if (matchedVoice) {
       utterance.voice = matchedVoice;
     }
@@ -161,7 +230,7 @@ export const ChatContainer: React.FC = () => {
         ? `[Statutory Context: Product classified as "${classificationState.category}", Statute: "${classificationState.statute}"] ${query}`
         : query;
 
-      const response = await askLegalQuestion(contextualizedQuery, jurisdiction);
+      const response = await askLegalQuestion(contextualizedQuery, jurisdiction, language);
       setMessages((prev) => [...prev, response]);
     } catch (err) {
       console.error(err);
@@ -170,19 +239,27 @@ export const ChatContainer: React.FC = () => {
     }
   };
 
-  const sampleQueries = classificationState?.category?.includes('Classical')
+  // Sample queries localized by language
+  const sampleQueries = language === 'bn'
+    ? [
+        "আদা এবং মধুর কাশির সিরাপ কি পেটেন্ট করা সম্ভব?",
+        "অশ্বগন্ধার জন্য BDA 2023 অনুসারে ABS প্রদেয় কত?",
+        "FSSAI 2022 এর অধীনে আয়ুর্বেদ-আহার কি পেটেন্টযোগ্য?",
+        "চরক সংহিতার রেসিপিতে ধারা ৩(p) কীভাবে প্রযোজ্য?",
+      ]
+    : language === 'hi'
+    ? [
+        "क्या मैं अदरक और शहद की खांसी की दवा पेटेंट करवा सकता हूँ?",
+        "अश्वगंधा के लिए BDA 2023 के तहत ABS नियम क्या हैं?",
+        "क्या FSSAI 2022 के तहत आयुर्वेद-आहार को पेटेंट किया जा सकता है?",
+        "शास्त्रीय नुस्खे पर धारा 3(p) कैसे लागू होती है?",
+      ]
+    : classificationState?.category?.includes('Classical')
     ? [
         "Can I patent an altered delivery method for this classical formula?",
         "Does Section 3(p) permit extracting active fractions?",
         "What are my BDA 2023 ABS exemptions as an Indian Vaidya?",
         "How to cite CSIR-TKDL textual prior art?",
-      ]
-    : classificationState?.category?.includes('Phytopharmaceutical')
-    ? [
-        "What are CDSCO Rule 122-E Schedule Y-A clinical trial requirements?",
-        "How do I secure NBA Section 6 prior approval before patent filing?",
-        "How to overcome Section 3(d) enhanced efficacy requirements?",
-        "US FDA Botanical Drug Guidance IND/NDA path details?",
       ]
     : [
         "Can I patent a ginger and honey cough syrup?",
@@ -190,6 +267,12 @@ export const ChatContainer: React.FC = () => {
         "Can I patent an Ayurveda-Aahar health biscuit under FSSAI 2022?",
         "How does US FDA regulate an Ayurvedic botanical drug under CDER?",
       ];
+
+  const placeholderText = language === 'bn'
+    ? "পেটেন্টযোগ্যতা, ধারা ৩, TKDL, বা ABS সম্মতি সম্পর্কে বাংলায় অথবা ইংরেজিতে প্রশ্ন করুন..."
+    : language === 'hi'
+    ? "पेटेंट योग्यता, धारा 3, TKDL या ABS नियमों के बारे में हिन्दी या अंग्रेजी में पूछें..."
+    : `Ask about patentability, Section 3 bars, TKDL, or ABS compliance in ${language.toUpperCase()} or English...`;
 
   return (
     <div className="flex-1 flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm relative">
@@ -315,12 +398,12 @@ export const ChatContainer: React.FC = () => {
                       {speakingMessageId === msg.id ? (
                         <>
                           <VolumeX className="w-3.5 h-3.5 text-amber-800 animate-pulse" />
-                          <span>Stop Audio / रोकें</span>
+                          <span>{language === 'bn' ? 'অডিও থামান' : language === 'hi' ? 'ऑडियो रोकें' : 'Stop Audio'}</span>
                         </>
                       ) : (
                         <>
                           <Volume2 className="w-3.5 h-3.5 text-[#002147]" />
-                          <span>Listen / आवाज़ सुनें</span>
+                          <span>{language === 'bn' ? 'বাংলায় শুনুন' : language === 'hi' ? 'आवाज़ सुनें' : 'Listen Audio'}</span>
                         </>
                       )}
                     </button>
@@ -361,7 +444,11 @@ export const ChatContainer: React.FC = () => {
             </div>
             <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
               <Sparkles className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-              <span>Synthesizing answer from Patents Act 1970, BDA 2023 & CSIR-TKDL...</span>
+              <span>
+                {language === 'bn'
+                  ? 'পেটেন্ট আইন ১৯৭০ এবং টিকেডিএল অনুসারে উত্তর প্রস্তুত করা হচ্ছে...'
+                  : 'Synthesizing answer from Patents Act 1970, BDA 2023 & CSIR-TKDL...'}
+              </span>
             </div>
           </div>
         )}
@@ -371,7 +458,7 @@ export const ChatContainer: React.FC = () => {
       <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-200 flex items-center gap-2 overflow-x-auto custom-scrollbar">
         <span className="text-[11px] text-slate-500 whitespace-nowrap font-bold flex items-center gap-1">
           <HelpCircle className="w-3 h-3 text-amber-600" />
-          <span>Quick Inquiries:</span>
+          <span>{language === 'bn' ? 'সাধারণ প্রশ্নসমূহ:' : language === 'hi' ? 'सामान्य प्रश्न:' : 'Quick Inquiries:'}</span>
         </span>
         {sampleQueries.map((sample, sIdx) => (
           <button
@@ -393,7 +480,7 @@ export const ChatContainer: React.FC = () => {
           value={inputQuery}
           onChange={(e) => setInputQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-          placeholder={`Ask about patentability, Section 3 bars, TKDL, or ABS compliance in ${language.toUpperCase()} or English...`}
+          placeholder={placeholderText}
           className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#002147] focus:bg-white transition-colors"
         />
 
