@@ -25,6 +25,7 @@ corpus_index.csv
 
 # Docs (As requested, keeping IP confidential)
 docs/
+*.md
 
 # Docker
 .docker/
