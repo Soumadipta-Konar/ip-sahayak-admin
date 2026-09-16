@@ -423,6 +423,28 @@ export const ChatContainer: React.FC = () => {
                 </div>
               )}
 
+              {/* Prominent Escalation Banner for Low Confidence / Ambiguity */}
+              {msg.sender === 'assistant' && (msg.requiresEscalation || (msg.confidenceScore !== undefined && msg.confidenceScore < 0.7)) && (
+                <div className="mt-3 p-3 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-900 flex flex-wrap items-center justify-between gap-3">
+                  <div className="space-y-0.5 max-w-md">
+                    <div className="flex items-center gap-1.5 font-bold text-xs text-amber-900">
+                      <ShieldAlert className="w-4 h-4 text-amber-700" />
+                      <span>Statutory Ambiguity Detected (Low Confidence)</span>
+                    </div>
+                    <p className="text-[11px] text-amber-800 leading-snug">
+                      This question touches complex overlapping regimes. We recommend human review by an empanelled AYUSH IP Facilitator.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsEscalationOpen(true)}
+                    className="px-3 py-1.5 rounded-lg bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold whitespace-nowrap shadow-xs transition-colors"
+                  >
+                    Escalate to IP Attorney
+                  </button>
+                </div>
+              )}
+
               {/* Audio Listen & Facilitator Footer */}
               {msg.sender === 'assistant' && (
                 <div className="mt-3.5 pt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 border-t border-slate-200/80 print:hidden">
@@ -496,6 +518,23 @@ export const ChatContainer: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Active Triage Context Banner (Handoff from Wizard) */}
+      {classificationState && (
+        <div className="px-4 py-2 bg-emerald-50/90 border-t border-emerald-200 text-xs flex flex-wrap items-center justify-between gap-2 text-emerald-950 print:hidden">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+            <span className="font-bold">Active Formulation Context Attached:</span>
+            <span className="font-semibold text-emerald-900 bg-white px-2 py-0.5 rounded border border-emerald-300">
+              {classificationState.category}
+            </span>
+            <span className="hidden sm:inline text-emerald-700 text-[11px]">({classificationState.statute})</span>
+          </div>
+          <Link href="/wizard" className="text-[11px] font-bold text-emerald-800 hover:underline">
+            Modify Triage
+          </Link>
+        </div>
+      )}
 
       {/* 4. Suggested Prompts */}
       <div className={`px-4 py-2.5 border-t flex items-center gap-2 overflow-x-auto custom-scrollbar print:hidden ${
