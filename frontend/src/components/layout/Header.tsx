@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Sparkles, Calculator, Globe, Mic, MessageSquare, CheckCircle2, Printer, Search, FileText } from 'lucide-react';
+import { Sparkles, Calculator, Globe, Mic, MessageSquare, CheckCircle2, Printer, Search, FileText, BookMarked } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 
 export const Header: React.FC = () => {
@@ -16,6 +16,7 @@ export const Header: React.FC = () => {
     { href: '/abs-calculator', label: 'BDA 2023 ABS Calculator', icon: Calculator },
     { href: '/prior-art', label: 'TKDL Prior-Art Analyzer', icon: Search },
     { href: '/dossier', label: 'Statutory Dossier', icon: FileText },
+    { href: '/history', label: 'Saved Citations', icon: BookMarked },
   ];
 
   return (

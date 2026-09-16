@@ -8,6 +8,7 @@ import { PriorArtAnalyzer } from '@/components/prior-art/PriorArtAnalyzer';
 import { StatutoryDossier } from '@/components/dossier/StatutoryDossier';
 import { FormulationWizard } from '@/components/wizard/FormulationWizard';
 import { ABSCalculator } from '@/components/abs/ABSCalculator';
+import { SessionHistory } from '@/components/history/SessionHistory';
 import { 
   Sparkles, 
   Calculator, 
@@ -18,11 +19,12 @@ import {
   Search, 
   FileText,
   Layers,
-  ArrowLeft
+  ArrowLeft,
+  BookMarked
 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 
-export type ActiveWorkspaceTab = 'copilot' | 'prior-art' | 'dossier' | 'wizard' | 'abs';
+export type ActiveWorkspaceTab = 'copilot' | 'prior-art' | 'dossier' | 'wizard' | 'abs' | 'history';
 
 function MainWorkspace() {
   const searchParams = useSearchParams();
@@ -241,6 +243,19 @@ function MainWorkspace() {
             <Calculator className="w-3.5 h-3.5 text-amber-500" />
             <span>BDA ABS Calculator</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('history')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+              activeTab === 'history'
+                ? 'bg-[#002147] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <BookMarked className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Saved Citations & History</span>
+          </button>
         </div>
 
         {activeTab !== 'copilot' && (
@@ -291,6 +306,12 @@ function MainWorkspace() {
       {activeTab === 'abs' && (
         <div className="flex-1 flex items-center justify-center">
           <ABSCalculator />
+        </div>
+      )}
+
+      {activeTab === 'history' && (
+        <div className="flex-1">
+          <SessionHistory />
         </div>
       )}
     </div>
