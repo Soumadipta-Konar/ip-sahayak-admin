@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     BHASHINI_API_KEY: str = ""
     
+    # Data Sources
+    RAW_DATA_DRIVE_URL: str = ""
+    
     # Database URLs
     QDRANT_URL: str = "http://localhost:6333"
     NEO4J_URI: str = "bolt://localhost:7687"
