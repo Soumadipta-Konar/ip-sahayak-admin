@@ -230,10 +230,20 @@ export const ChatContainer: React.FC = () => {
         ? `[Statutory Context: Product classified as "${classificationState.category}", Statute: "${classificationState.statute}"] ${query}`
         : query;
 
-      const response = await askLegalQuestion(contextualizedQuery, jurisdiction, language, sessionId);
+      const response = await askLegalQuestion(contextualizedQuery, jurisdiction, language, sessionId, classificationState);
       setMessages((prev) => [...prev, response]);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error('Backend connection error:', err);
+      const errorMessage: ChatMessage = {
+        id: 'err_' + Date.now(),
+        sender: 'assistant',
+        text: `⚠️ **Government Copilot Connection Notice**\n\nUnable to reach the legal AI backend at \`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}\`.\n\n**Possible Cause:** The FastAPI backend server is not running or port 8000 is unavailable.\n\n*Error details:* ${err?.message || 'Network request failed'}\n\n*To start the backend:* Run \`uvicorn app.main:app --reload --port 8000\` inside the \`backend/\` directory.`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        jurisdiction,
+        confidenceScore: 0,
+        requiresEscalation: true,
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
