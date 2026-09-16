@@ -52,18 +52,14 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onTranscription, l
         chunksRef.current = [];
 
         try {
-          // Attempt backend upload; fallback to simulation if backend offline
           const transcribedText = await uploadVoiceRecording(audioBlob);
           onTranscription(transcribedText);
-        } catch (err) {
-          console.warn("Backend voice endpoint unreachable. Simulating Bhashini Hindi transcription:", err);
-          setTimeout(() => {
-            onTranscription("क्या मैं अदरक और शहद के शास्त्रीय चूर्ण का पेटेंट करा सकता हूँ?");
-            setIsProcessing(false);
-          }, 1200);
-          return;
+        } catch (err: any) {
+          console.error("Backend voice transcription failed:", err);
+          alert(`Bhashini Voice Error: ${err?.message || 'Failed to communicate with /transcribe'}. Please verify that the FastAPI backend is running.`);
+        } finally {
+          setIsProcessing(false);
         }
-        setIsProcessing(false);
       };
 
       mediaRecorderRef.current.start();

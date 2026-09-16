@@ -279,7 +279,6 @@ export const FormulationWizard: React.FC = () => {
                     section: 'Section 3(p) & 3(e)',
                     description: 'Statutory exclusions governing traditional knowledge and combinations in Indian patent practice.',
                     jurisdiction: 'IN',
-                    url: 'https://www.ipindia.gov.in',
                   });
                 }}
                 className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all border border-slate-300"
