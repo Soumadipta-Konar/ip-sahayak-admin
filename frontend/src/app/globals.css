@@ -20,31 +20,140 @@ body {
   transition: font-size 0.15s ease-in-out;
 }
 
-/* GIGW High Contrast Accessibility Mode */
+/* Eye-Friendly, GIGW & WCAG 2.1 AAA Compliant High Contrast / Dark Theme */
+html.high-contrast {
+  color-scheme: dark;
+}
+
 html.high-contrast body {
-  background-color: #000000 !important;
-  color: #ffff00 !important;
+  background-color: #0b0f19 !important;
+  color: #f1f5f9 !important;
 }
 
+/* Master Header & Navigation */
 html.high-contrast header,
-html.high-contrast nav,
-html.high-contrast main,
-html.high-contrast div,
-html.high-contrast aside,
-html.high-contrast footer {
-  background-color: #000000 !important;
-  color: #ffff00 !important;
-  border-color: #ffff00 !important;
+html.high-contrast nav {
+  background-color: #070d18 !important;
+  border-color: #1e293b !important;
 }
 
-html.high-contrast button,
-html.high-contrast a,
+/* Top utility bar */
+html.high-contrast .bg-\[\#f1f5f9\] {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+  color: #cbd5e1 !important;
+}
+
+html.high-contrast .bg-\[\#f1f5f9\] span,
+html.high-contrast .bg-\[\#f1f5f9\] div,
+html.high-contrast .bg-\[\#f1f5f9\] a {
+  color: #cbd5e1 !important;
+}
+
+/* Surfaces, Cards, and Panels */
+html.high-contrast .bg-white,
+html.high-contrast .govt-card,
+html.high-contrast .glass-panel,
+html.high-contrast .glass-panel-intl {
+  background-color: #111827 !important;
+  border-color: #374151 !important;
+  color: #f3f4f6 !important;
+}
+
+html.high-contrast .bg-slate-50,
+html.high-contrast .bg-slate-100 {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+/* Typography & Headings */
+html.high-contrast h1,
+html.high-contrast h2,
+html.high-contrast h3,
+html.high-contrast h4,
+html.high-contrast .text-\[\#002147\],
+html.high-contrast .text-slate-900,
+html.high-contrast .text-slate-800 {
+  color: #f8fafc !important;
+}
+
+html.high-contrast p,
+html.high-contrast span.text-slate-600,
+html.high-contrast span.text-slate-500,
+html.high-contrast .text-slate-600,
+html.high-contrast .text-slate-500 {
+  color: #cbd5e1 !important;
+}
+
+/* Form Inputs & Interactive Elements */
 html.high-contrast input,
-html.high-contrast select,
-html.high-contrast textarea {
-  background-color: #000000 !important;
+html.high-contrast textarea,
+html.high-contrast select {
+  background-color: #1f2937 !important;
+  color: #f9fafb !important;
+  border-color: #4b5563 !important;
+}
+
+html.high-contrast input::placeholder,
+html.high-contrast textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+/* Badges & Accents - Eye-friendly High Contrast Tones */
+html.high-contrast .bg-emerald-50,
+html.high-contrast .bg-emerald-100 {
+  background-color: #064e3b !important;
+  color: #a7f3d0 !important;
+  border-color: #059669 !important;
+}
+
+html.high-contrast .text-emerald-700,
+html.high-contrast .text-emerald-800 {
+  color: #6ee7b7 !important;
+}
+
+html.high-contrast .bg-amber-50,
+html.high-contrast .bg-amber-100 {
+  background-color: #451a03 !important;
+  color: #fde68a !important;
+  border-color: #d97706 !important;
+}
+
+html.high-contrast .text-amber-700,
+html.high-contrast .text-amber-800 {
+  color: #fcd34d !important;
+}
+
+html.high-contrast .bg-blue-50,
+html.high-contrast .bg-blue-100 {
+  background-color: #172554 !important;
+  color: #bfdbfe !important;
+  border-color: #2563eb !important;
+}
+
+/* Preserving Imagery & Portraits */
+html.high-contrast img {
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* Borders & Dividers */
+html.high-contrast .border-slate-200,
+html.high-contrast .border-slate-300 {
+  border-color: #334155 !important;
+}
+
+/* Chat Bubbles */
+html.high-contrast .chat-bubble-user {
+  background-color: #1e3a8a !important;
   color: #ffffff !important;
-  border-color: #ffffff !important;
+}
+
+html.high-contrast .chat-bubble-assistant {
+  background-color: #111827 !important;
+  border-color: #374151 !important;
+  color: #f1f5f9 !important;
 }
 
 /* Government of India Portal Surface Styles */

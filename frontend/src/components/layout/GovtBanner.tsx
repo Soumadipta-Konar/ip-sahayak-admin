@@ -62,15 +62,15 @@ export const GovtBanner: React.FC = () => {
             <button
               type="button"
               onClick={handleToggleContrast}
-              className={`px-1.5 py-0.5 rounded border text-[10px] font-bold flex items-center gap-1 transition-all ${
+              className={`px-2 py-0.5 rounded border text-[10px] font-bold flex items-center gap-1.5 transition-all ${
                 isHighContrast
-                  ? 'bg-yellow-400 text-black border-yellow-500'
+                  ? 'bg-slate-900 text-amber-300 border-amber-400 shadow-xs'
                   : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
               }`}
               aria-label="Toggle High Contrast Accessibility Mode"
             >
-              <Eye className="w-3 h-3" />
-              <span>{isHighContrast ? 'Standard' : 'High Contrast'}</span>
+              <Eye className={`w-3 h-3 ${isHighContrast ? 'text-amber-400' : 'text-slate-600'}`} />
+              <span>{isHighContrast ? 'Contrast: ON' : 'High Contrast'}</span>
             </button>
 
             <span className="text-slate-300">|</span>
