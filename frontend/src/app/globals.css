@@ -3,32 +3,72 @@
 @tailwind utilities;
 
 :root {
-  --background: #020617;
-  --foreground: #f8fafc;
-  --accent-india: #10b981;
-  --accent-saffron: #f97316;
-  --accent-intl: #6366f1;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --govt-navy: #002147;
+  --govt-blue: #0b3d91;
+  --accent-saffron: #ff9933;
+  --accent-green: #138808;
+  --accent-ashoka: #000080;
 }
 
 body {
-  background: radial-gradient(circle at 50% 0%, #064e3b 0%, #020617 70%);
-  color: var(--foreground);
+  background-color: #f8fafc;
+  color: #0f172a;
   min-height: 100vh;
   font-feature-settings: "rlig" 1, "calt" 1;
+  transition: font-size 0.15s ease-in-out;
+}
+
+/* GIGW High Contrast Accessibility Mode */
+html.high-contrast body {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+}
+
+html.high-contrast header,
+html.high-contrast nav,
+html.high-contrast main,
+html.high-contrast div,
+html.high-contrast aside,
+html.high-contrast footer {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+  border-color: #ffff00 !important;
+}
+
+html.high-contrast button,
+html.high-contrast a,
+html.high-contrast input,
+html.high-contrast select,
+html.high-contrast textarea {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+/* Government of India Portal Surface Styles */
+.govt-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+}
+
+.govt-header {
+  background-color: #002147;
+  color: #ffffff;
 }
 
 .glass-panel {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
 }
 
 .glass-panel-intl {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  background: #ffffff;
+  border: 1px solid #93c5fd;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.08);
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -36,12 +76,42 @@ body {
   height: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+  background: #f1f5f9;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(16, 185, 129, 0.4);
+  background: #94a3b8;
   border-radius: 9999px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(16, 185, 129, 0.7);
+  background: #64748b;
+}
+
+/* Clean Official Print Stylesheet for Statutory Dossier & Consultation PDF Export */
+@media print {
+  @page {
+    margin: 12mm 15mm;
+    size: auto;
+  }
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+  /* Remove noisy background gradients and shadows */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  /* Ensure statutory cards and sidebars print with neat borders */
+  aside, .border {
+    border: 1px solid #cbd5e1 !important;
+  }
+  /* Avoid breaking cards across pages */
+  .rounded-2xl, .rounded-xl {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }

@@ -1,90 +1,101 @@
 'use client';
+
 import React from 'react';
 import Link from 'next/link';
-import { Shield, Sparkles, Calculator, Globe, Mic } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { Sparkles, Calculator, Globe, Mic, MessageSquare, CheckCircle2, Printer } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 
 export const Header: React.FC = () => {
-  const { language, setLanguage, jurisdiction } = useAppStore();
+  const { language, setLanguage, classificationState } = useAppStore();
+  const pathname = usePathname();
 
-  const isIndia = jurisdiction === 'IN';
+  const navLinks = [
+    { href: '/', label: 'Legal Copilot', icon: MessageSquare },
+    { href: '/wizard', label: 'Formulation Triage (Step 1)', icon: Sparkles },
+    { href: '/abs-calculator', label: 'BDA 2023 ABS Calculator', icon: Calculator },
+  ];
 
   return (
-    <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-        
-        {/* Brand */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className={`p-2 rounded-xl border transition-transform group-hover:scale-105 ${
-            isIndia ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400'
-          }`}>
-            <Shield className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-lg tracking-wide text-white">IP-SAKTI</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-semibold border ${
-                isIndia 
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' 
-                  : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
-              }`}>
-                Sahayak
-              </span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                SIH 045
+    <nav className="bg-[#002147] text-white sticky top-0 z-40 shadow-md">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-1 sm:gap-2">
+          {navLinks.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors ${
+                  isActive
+                    ? 'bg-white text-[#002147] shadow-xs'
+                    : 'text-slate-200 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#002147]' : 'text-emerald-400'}`} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Right Area: Triage Status & Bhashini Controls */}
+        <div className="flex items-center gap-3">
+          {/* Active Triage Pill */}
+          {classificationState ? (
+            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-900/80 border border-emerald-500/50 text-[11px] text-emerald-200 font-medium">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="truncate max-w-[200px]">
+                Triaged: {classificationState.category?.split('.')[1]?.trim() || classificationState.category}
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 hidden sm:block">
-              Ayurvedic IP, Patentability & Regulatory Copilot (Ministry of AYUSH)
-            </p>
-          </div>
-        </Link>
+          ) : (
+            <Link
+              href="/wizard"
+              className="hidden md:flex items-center gap-1 px-2.5 py-1 rounded bg-amber-500/20 border border-amber-400/40 text-[11px] text-amber-200 font-medium hover:bg-amber-500/30 transition-colors"
+            >
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              <span>Formulation Not Triaged</span>
+            </Link>
+          )}
 
-        {/* Navigation */}
-        <nav className="flex items-center gap-2">
-          <Link 
-            href="/wizard" 
-            className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-900 border border-transparent hover:border-slate-700 transition-all flex items-center gap-1.5"
+          {/* Download PDF Quick Action */}
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#001733] hover:bg-[#002d60] border border-blue-900 text-xs text-white font-medium transition-colors shadow-2xs"
+            title="Download or Print Statutory Dossier / Page as PDF"
           >
-            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Formulation Wizard</span>
-          </Link>
-          
-          <Link 
-            href="/abs-calculator" 
-            className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-900 border border-transparent hover:border-slate-700 transition-all flex items-center gap-1.5"
-          >
-            <Calculator className="w-3.5 h-3.5 text-amber-400" />
-            <span>ABS Calculator</span>
-          </Link>
-        </nav>
+            <Printer className="w-3.5 h-3.5 text-blue-300" />
+            <span>Download PDF</span>
+          </button>
 
-        {/* Language & Voice Selector (Bhashini Powered) */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5">
-            <Globe className="w-3.5 h-3.5 text-slate-400" />
-            <select 
+          {/* Language Selector (Bhashini) */}
+          <div className="flex items-center gap-1.5 bg-[#001733] border border-blue-900 rounded-lg px-2.5 py-1">
+            <Globe className="w-3.5 h-3.5 text-slate-300" />
+            <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
               aria-label="Select Bhashini Language"
-              className="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer"
+              className="bg-transparent text-xs text-white focus:outline-none cursor-pointer"
             >
-              <option value="en" className="bg-slate-900">English (EN)</option>
-              <option value="hi" className="bg-slate-900">हिन्दी (Hindi)</option>
-              <option value="ml" className="bg-slate-900">മലയാളം (Malayalam)</option>
-              <option value="ta" className="bg-slate-900">தமிழ் (Tamil)</option>
-              <option value="te" className="bg-slate-900">తెలుగు (Telugu)</option>
-              <option value="bn" className="bg-slate-900">বাংলা (Bengali)</option>
+              <option value="en" className="bg-[#002147] text-white">English (EN)</option>
+              <option value="hi" className="bg-[#002147] text-white">हिन्दी (Hindi)</option>
+              <option value="ml" className="bg-[#002147] text-white">മലയാളം (Malayalam)</option>
+              <option value="ta" className="bg-[#002147] text-white">தமிழ் (Tamil)</option>
+              <option value="te" className="bg-[#002147] text-white">తెలుగు (Telugu)</option>
+              <option value="bn" className="bg-[#002147] text-white">বাংলা (Bengali)</option>
             </select>
           </div>
 
-          <div className="hidden sm:flex items-center gap-1 text-[11px] text-emerald-400 font-medium px-2 py-1 rounded bg-emerald-950/60 border border-emerald-800/60">
-            <Mic className="w-3 h-3" />
+          <div className="hidden sm:flex items-center gap-1 text-[11px] text-emerald-300 font-medium px-2 py-1 rounded bg-emerald-950/70 border border-emerald-800">
+            <Mic className="w-3 h-3 text-emerald-400" />
             <span>Bhashini Ready</span>
           </div>
         </div>
-
       </div>
-    </header>
+    </nav>
   );
 };
