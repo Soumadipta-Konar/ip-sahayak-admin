@@ -1,5 +1,12 @@
 import { create } from 'zustand';
-import { Jurisdiction, StatutoryCitation, ClassificationResult } from './types';
+import { 
+  Jurisdiction, 
+  StatutoryCitation, 
+  ClassificationResult,
+  PriorArtAnalysisResult,
+  ABSCalculationState,
+  DossierResult 
+} from './types';
 
 interface AppState {
   jurisdiction: Jurisdiction;
@@ -14,6 +21,12 @@ interface AppState {
   setIsEscalationOpen: (open: boolean) => void;
   classificationState: Partial<ClassificationResult> | null;
   setClassificationState: (state: Partial<ClassificationResult> | null) => void;
+  priorArtAnalysis: PriorArtAnalysisResult | null;
+  setPriorArtAnalysis: (analysis: PriorArtAnalysisResult | null) => void;
+  absCalculation: ABSCalculationState | null;
+  setAbsCalculation: (calc: ABSCalculationState | null) => void;
+  dossierData: DossierResult | null;
+  setDossierData: (data: DossierResult | null) => void;
   sessionId: string;
   resetSessionId: () => void;
 }
@@ -31,6 +44,12 @@ export const useAppStore = create<AppState>((set) => ({
   setIsEscalationOpen: (isEscalationOpen) => set({ isEscalationOpen }),
   classificationState: null,
   setClassificationState: (classificationState) => set({ classificationState }),
+  priorArtAnalysis: null,
+  setPriorArtAnalysis: (priorArtAnalysis) => set({ priorArtAnalysis }),
+  absCalculation: null,
+  setAbsCalculation: (absCalculation) => set({ absCalculation }),
+  dossierData: null,
+  setDossierData: (dossierData) => set({ dossierData }),
   sessionId: 'session_' + Math.random().toString(36).substring(7),
   resetSessionId: () => set({ sessionId: 'session_' + Math.random().toString(36).substring(7) }),
 }));
