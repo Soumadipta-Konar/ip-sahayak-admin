@@ -8,6 +8,8 @@ export interface StatutoryCitation {
   snippet?: string;
   url?: string;
   jurisdiction: 'IN' | 'INTL';
+  collectedAt?: string;
+  source?: 'canonical' | 'chat_session' | 'user_saved';
 }
 
 export interface ClassificationResult {
@@ -40,8 +42,11 @@ export interface ChatMessage {
 
 export interface AskRequest {
   query: string;
-  jurisdiction: "INDIA" | "INTERNATIONAL";
+  jurisdiction: "INDIA" | "INTERNATIONAL" | "IN" | "INTL";
   session_id: string;
+  language?: string;
+  context?: Partial<ClassificationResult> | null;
+  session_metadata?: Record<string, any> | null;
 }
 
 export interface AskResponse {

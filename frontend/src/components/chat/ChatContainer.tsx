@@ -15,8 +15,10 @@ import {
   ArrowRight,
   Volume2,
   VolumeX,
-  Globe2,
-  Printer
+  Printer,
+  RotateCcw,
+  BookMarked,
+  Bookmark
 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { ChatMessage, StatutoryCitation } from '@/lib/types';
@@ -71,6 +73,35 @@ function translateToIndicSpeech(text: string, targetLang: string): string {
   return text;
 }
 
+const createWelcomeMessage = (lang: string): ChatMessage => ({
+  id: 'welcome',
+  sender: 'assistant',
+  text: WELCOME_MESSAGES[lang] || WELCOME_MESSAGES['en'],
+  timestamp: '10:00 AM',
+  jurisdiction: 'IN',
+  confidenceScore: 0.98,
+  citations: [
+    {
+      id: 'welcome-cit-1',
+      act: 'The Patents Act, 1970',
+      section: 'Section 3(p)',
+      description: 'Traditional Knowledge Non-Patentability Bar',
+      jurisdiction: 'IN',
+      url: 'https://www.ipindia.gov.in',
+      source: 'canonical'
+    },
+    {
+      id: 'welcome-cit-2',
+      act: 'Biological Diversity Act, 2002 (as amended 2023)',
+      section: 'Section 6',
+      description: 'Prior NBA Approval for IPR on Indian Biological Resources',
+      jurisdiction: 'IN',
+      url: 'http://nbaindia.org/',
+      source: 'canonical'
+    }
+  ]
+});
+
 export const ChatContainer: React.FC = () => {
   const { 
     jurisdiction, 
@@ -79,54 +110,50 @@ export const ChatContainer: React.FC = () => {
     setSelectedCitation, 
     setIsEscalationOpen,
     classificationState,
-    sessionId 
+    sessionId,
+    chatMessages,
+    setChatMessages,
+    clearChatMessages,
+    savedCitations,
+    addSavedCitations,
+    removeSavedCitation,
+    isCitationSaved,
+    isHydrated,
+    hydrateFromStorage
   } = useAppStore();
   
   const [inputQuery, setInputQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
+  const [isConfirmingClear, setIsConfirmingClear] = useState(false);
 
   const isIntl = jurisdiction === 'INTL';
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome',
-      sender: 'assistant',
-      text: WELCOME_MESSAGES[language] || WELCOME_MESSAGES['en'],
-      timestamp: '10:00 AM',
-      jurisdiction: 'IN',
-      confidenceScore: 0.98,
-      citations: [
-        {
-          id: 'welcome-cit-1',
-          act: 'The Patents Act, 1970',
-          section: 'Section 3(p)',
-          description: 'Traditional Knowledge Non-Patentability Bar',
-          jurisdiction: 'IN',
-          url: 'https://www.ipindia.gov.in',
-        },
-        {
-          id: 'welcome-cit-2',
-          act: 'Biological Diversity Act, 2002 (as amended 2023)',
-          section: 'Section 6',
-          description: 'Prior NBA Approval for IPR on Indian Biological Resources',
-          jurisdiction: 'IN',
-          url: 'http://nbaindia.org/',
-        }
-      ]
-    },
-  ]);
-
-  // Update welcome message dynamically whenever user changes language
+  // 1. Client-side rehydration of chat & saved citations from localStorage
   useEffect(() => {
-    setMessages((prev) => 
-      prev.map((msg) => 
-        msg.id === 'welcome' 
-          ? { ...msg, text: WELCOME_MESSAGES[language] || WELCOME_MESSAGES['en'] }
-          : msg
-      )
-    );
-  }, [language]);
+    hydrateFromStorage();
+  }, [hydrateFromStorage]);
+
+  // 2. Initialize welcome message if empty once hydrated, and seed citations
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    if (chatMessages.length === 0) {
+      const welcome = createWelcomeMessage(language);
+      setChatMessages([welcome]);
+      if (welcome.citations) {
+        addSavedCitations(welcome.citations, 'canonical');
+      }
+    }
+  }, [isHydrated, chatMessages.length, language, setChatMessages, addSavedCitations]);
+
+  // 3. Update welcome message dynamically whenever user changes language (only if still at initial greeting)
+  useEffect(() => {
+    if (!isHydrated) return;
+    if (chatMessages.length === 1 && chatMessages[0].id === 'welcome') {
+      setChatMessages([createWelcomeMessage(language)]);
+    }
+  }, [language, isHydrated]);
 
   // Clean up speech synthesis on component unmount
   useEffect(() => {
@@ -221,7 +248,7 @@ export const ChatContainer: React.FC = () => {
       jurisdiction,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    setChatMessages((prev) => [...prev, userMessage]);
     setInputQuery('');
     setIsLoading(true);
 
@@ -231,7 +258,12 @@ export const ChatContainer: React.FC = () => {
         : query;
 
       const response = await askLegalQuestion(contextualizedQuery, jurisdiction, language, sessionId, classificationState);
-      setMessages((prev) => [...prev, response]);
+      setChatMessages((prev) => [...prev, response]);
+
+      // OPTION B: Automatically append cited statutory laws to Saved Citations session store
+      if (response.citations && response.citations.length > 0) {
+        addSavedCitations(response.citations, 'chat_session');
+      }
     } catch (err: any) {
       console.error('Backend connection error:', err);
       const errorMessage: ChatMessage = {
@@ -243,11 +275,30 @@ export const ChatContainer: React.FC = () => {
         confidenceScore: 0,
         requiresEscalation: true,
       };
-      setMessages((prev) => [...prev, errorMessage]);
+      setChatMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleClearHistory = () => {
+    if (!isConfirmingClear) {
+      setIsConfirmingClear(true);
+      setTimeout(() => setIsConfirmingClear(false), 4000);
+      return;
+    }
+    clearChatMessages();
+    const freshWelcome = createWelcomeMessage(language);
+    setChatMessages([freshWelcome]);
+    if (freshWelcome.citations) {
+      addSavedCitations(freshWelcome.citations, 'canonical');
+    }
+    setIsConfirmingClear(false);
+  };
+
+  const displayMessages = (!isHydrated || chatMessages.length === 0) 
+    ? [createWelcomeMessage(language)] 
+    : chatMessages;
 
   const sampleQueries = language === 'bn'
     ? [
@@ -293,154 +344,237 @@ export const ChatContainer: React.FC = () => {
     : `Ask about patentability, Section 3 bars, TKDL, or ABS compliance in ${language.toUpperCase()} or English...`;
 
   return (
-    <div className={`flex-1 flex flex-col bg-white rounded-2xl border overflow-hidden shadow-sm relative transition-colors ${
-      isIntl ? 'border-indigo-300 shadow-indigo-100/40' : 'border-slate-200'
+    <div className={`flex-1 flex flex-col bg-white border-2 overflow-hidden shadow-none relative ${
+      isIntl ? 'border-indigo-400' : 'border-slate-300'
     }`}>
       {/* 1. Active Formulation Dossier / Triage Recommendation Banner */}
       {classificationState ? (
-        <div className="bg-emerald-50 border-b border-emerald-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2 text-emerald-950">
-            <CheckCircle2 className="w-4 h-4 text-emerald-700 flex-shrink-0" />
-            <span className="font-bold">Active Case Dossier:</span>
-            <span className="font-semibold bg-white border border-emerald-300 px-2 py-0.5 rounded text-emerald-900 shadow-xs">
+        <div className="bg-[#f1f3f6] border-b-2 border-slate-300 px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2 text-slate-900 font-medium">
+            <CheckCircle2 className="w-4 h-4 text-emerald-800 flex-shrink-0" />
+            <span className="font-bold text-[#002147]">Active Case Dossier:</span>
+            <span className="font-bold bg-white border border-slate-400 px-2 py-0.5 text-emerald-900">
               {classificationState.category}
             </span>
-            <span className="text-emerald-800 hidden lg:inline text-[11px] font-medium">
+            <span className="text-slate-700 hidden lg:inline text-[11px] font-medium">
               &bull; {classificationState.patentability?.slice(0, 60)}...
             </span>
           </div>
           <Link
             href="/wizard"
-            className="text-xs font-bold text-emerald-800 hover:text-emerald-950 underline flex items-center gap-1"
+            className="text-xs font-bold text-[#002147] hover:underline flex items-center gap-1"
           >
             <span>Change / Re-triage</span>
             <ArrowRight className="w-3 h-3" />
           </Link>
         </div>
       ) : (
-        <div className="bg-blue-50 border-b border-blue-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2 text-slate-800">
-            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse flex-shrink-0" />
+        <div className="bg-[#fff8e1] border-b-2 border-amber-300 px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2 text-amber-950">
+            <span className="w-2 h-2 bg-amber-600 animate-pulse flex-shrink-0" />
             <span className="font-bold text-[#002147]">Step 1 Recommended:</span>
-            <span className="text-slate-600">
+            <span className="text-amber-900 font-medium">
               Formulation is not yet triaged. Classify your formulation first to ensure the AI applies the accurate Section 3(p)/(e)/(d) and ABS rules.
             </span>
           </div>
           <Link
             href="/wizard"
-            className="px-3 py-1 rounded bg-[#002147] hover:bg-[#001733] text-white font-bold text-[11px] shadow-xs flex items-center gap-1.5 transition-colors"
+            className="px-3 py-1 bg-[#002147] hover:bg-[#001733] text-white font-bold text-[11px] border border-[#001733] flex items-center gap-1.5 transition-colors"
           >
             <span>Launch Triage (Step 1)</span>
-            <ArrowRight className="w-3 h-3 text-emerald-400" />
+            <ArrowRight className="w-3 h-3 text-[#FF9933]" />
           </Link>
         </div>
       )}
 
-      {/* 2. Top Toolbar with Jurisdiction Themeing */}
-      <div className={`p-3.5 sm:p-4 border-b flex flex-wrap items-center justify-between gap-3 transition-colors ${
-        isIntl ? 'bg-indigo-50/70 border-indigo-200' : 'bg-slate-50/80 border-slate-200'
+      {/* 2. Top Toolbar (Official Navy Government Header) */}
+      <div className={`p-3 sm:p-3.5 border-b-2 border-slate-300 flex flex-wrap items-center justify-between gap-3 ${
+        isIntl ? 'bg-indigo-950 text-white' : 'bg-[#002147] text-white'
       }`}>
         <div className="flex items-center gap-2">
-          <div className={`w-2.5 h-2.5 rounded-full animate-pulse ${
-            isIntl ? 'bg-indigo-600' : 'bg-emerald-600'
+          <div className={`w-2.5 h-2.5 ${
+            isIntl ? 'bg-indigo-400' : 'bg-emerald-400'
           }`} />
-          <span className={`text-xs font-bold ${
-            isIntl ? 'text-indigo-950' : 'text-[#002147]'
-          }`}>
+          <span className="text-xs font-bold tracking-wide">
             {isIntl 
               ? 'International IPR & Botanical Drug Frameworks (WIPO GRATK & US FDA CDER)' 
               : 'Live Statutory Intelligence Agent (CSIR-TKDL & BDA 2023)'}
           </span>
+          {chatMessages.length > 1 && (
+            <span className="hidden md:inline-flex text-[10px] font-bold px-2 py-0.5 bg-blue-900 border border-blue-400 text-white">
+              {chatMessages.length} Messages Logged
+            </span>
+          )}
         </div>
+
         <div className="flex items-center gap-2 print:hidden">
+          {/* Saved Citations Quick Counter (Option B) */}
+          <Link
+            href="/history"
+            className="px-2.5 py-1 bg-[#001733] hover:bg-[#002d60] text-white text-xs font-bold border border-slate-400 flex items-center gap-1.5 transition-colors"
+            title="View collected statutory citations in Session History"
+          >
+            <BookMarked className="w-3.5 h-3.5 text-[#FF9933]" />
+            <span className="hidden sm:inline">Saved Citations</span>
+            <span className="px-1.5 py-0.2 bg-[#FF9933] text-slate-950 text-[10px] font-mono font-bold">
+              {savedCitations.length}
+            </span>
+          </Link>
+
+          {/* Clear / New Consultation (Option A) */}
+          <button
+            type="button"
+            onClick={handleClearHistory}
+            className={`px-2.5 py-1 text-xs font-bold border flex items-center gap-1.5 transition-colors ${
+              isConfirmingClear
+                ? 'bg-red-700 text-white border-red-800 animate-pulse'
+                : 'bg-[#001733] hover:bg-red-900 text-slate-200 hover:text-white border-slate-400'
+            }`}
+            title="Clear chat history and start a fresh legal consultation session"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>{isConfirmingClear ? 'Confirm Reset?' : 'New Consultation'}</span>
+          </button>
+
+          {/* Download PDF */}
           <button
             type="button"
             onClick={() => window.print()}
-            className="px-3 py-1.5 rounded-lg bg-white hover:bg-blue-50 text-[#002147] text-xs font-bold border border-slate-300 hover:border-blue-400 shadow-2xs flex items-center gap-1.5 transition-colors"
+            className="px-2.5 py-1 bg-[#001733] hover:bg-[#002d60] text-white text-xs font-bold border border-slate-400 flex items-center gap-1.5 transition-colors"
             title="Download or Print Consultation Transcript as PDF"
           >
-            <Printer className="w-3.5 h-3.5 text-blue-700" />
-            <span>Download PDF</span>
+            <Printer className="w-3.5 h-3.5 text-slate-300" />
+            <span className="hidden sm:inline">PDF</span>
           </button>
+
           <JurisdictionToggle value={jurisdiction} onChange={setJurisdiction} />
         </div>
       </div>
 
-      {/* 3. Messages Stream */}
-      <div className="flex-1 p-4 sm:p-6 overflow-y-auto custom-scrollbar space-y-6 bg-white">
-        {messages.map((msg) => (
+      {/* 3. Messages Stream (Flat Government Panels) */}
+      <div className="flex-1 p-4 sm:p-5 overflow-y-auto custom-scrollbar space-y-4 bg-[#f8f9fa]">
+        {displayMessages.map((msg) => (
           <motion.div
             key={msg.id}
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`flex gap-3.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`flex gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             {msg.sender === 'assistant' && (
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-1 shadow-xs border ${
-                isIntl ? 'bg-indigo-50 border-indigo-200 text-indigo-900' : 'bg-blue-50 border-blue-200 text-[#002147]'
-              }`}>
+              <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 mt-0.5 border border-slate-400 bg-[#002147] text-white">
                 <Bot className="w-4 h-4" />
               </div>
             )}
 
-            <div className={`max-w-2xl rounded-2xl p-4 sm:p-5 text-xs sm:text-sm leading-relaxed ${
+            <div className={`max-w-2xl p-4 sm:p-5 text-xs sm:text-sm leading-relaxed border-2 ${
               msg.sender === 'user'
-                ? isIntl 
-                  ? 'bg-indigo-900 text-white rounded-tr-none shadow-sm' 
-                  : 'bg-[#002147] text-white rounded-tr-none shadow-sm'
-                : isIntl
-                  ? 'bg-indigo-50/30 border border-indigo-100 text-slate-800 rounded-tl-none shadow-xs'
-                  : 'bg-slate-50 border border-slate-200 text-slate-800 rounded-tl-none shadow-xs'
+                ? 'bg-[#002147] text-white border-[#001733]'
+                : 'bg-white text-slate-900 border-slate-300'
             }`}>
               {/* Parse Markdown & Inline Citations */}
               {msg.sender === 'assistant' ? (
                 <MarkdownContent content={msg.text} />
               ) : (
-                <p className="whitespace-pre-wrap">{msg.text}</p>
+                <p className="whitespace-pre-wrap font-medium">{msg.text}</p>
               )}
 
-              {/* Citations Badges */}
+              {/* Citations Badges with Option B Auto-Collector & Bookmark Toggle */}
               {msg.citations && msg.citations.length > 0 && (
-                <div className="mt-4 pt-3 border-t border-slate-200">
-                  <div className="flex items-center gap-1 text-[11px] text-slate-600 mb-2 font-bold">
-                    <Scale className="w-3.5 h-3.5 text-[#002147]" />
-                    <span>Statutory Legal Citations (Inspect Verbatim Clause):</span>
+                <div className="mt-4 pt-3 border-t-2 border-slate-200">
+                  <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] text-slate-700 mb-2 font-bold">
+                    <div className="flex items-center gap-1">
+                      <Scale className="w-3.5 h-3.5 text-[#002147]" />
+                      <span>Statutory Legal Citations (Inspect Verbatim Clause):</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-900 bg-emerald-100 px-2 py-0.5 border border-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-700" />
+                      Auto-Logged to Session Vault
+                    </span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {msg.citations.map((cit, cIdx) => (
-                      <button
-                        key={cIdx}
-                        onClick={() => setSelectedCitation(cit)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-white border border-slate-300 hover:border-blue-600 hover:text-blue-900 text-slate-800 text-xs font-mono transition-all shadow-2xs group"
-                      >
-                        <span className="font-bold text-[11px] text-[#002147]">§ {cit.section}</span>
-                        <span className="text-[10px] text-slate-500 group-hover:text-blue-700">
-                          ({cit.act})
-                        </span>
-                      </button>
-                    ))}
+                    {msg.citations.map((cit, cIdx) => {
+                      const isSaved = isCitationSaved(cit.act, cit.section);
+                      return (
+                        <div
+                          key={cIdx}
+                          className="inline-flex items-stretch border-2 border-slate-400 bg-white hover:border-[#002147] transition-all"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setSelectedCitation(cit)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-slate-900 text-xs font-mono font-bold hover:bg-slate-100 transition-colors"
+                            title="Click to inspect verbatim statutory clause"
+                          >
+                            <span className="text-[11px] text-[#002147]">§ {cit.section}</span>
+                            <span className="text-[10px] text-slate-600 font-sans font-medium">
+                              ({cit.act})
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isSaved) {
+                                removeSavedCitation(cit.id || `${cit.act}::${cit.section}`);
+                              } else {
+                                addSavedCitations([cit], 'user_saved');
+                              }
+                            }}
+                            className={`px-2 py-1 border-l-2 text-xs transition-colors flex items-center justify-center ${
+                              isSaved
+                                ? 'bg-amber-100 text-amber-900 border-amber-400'
+                                : 'bg-slate-100 text-slate-500 border-slate-300 hover:text-amber-700 hover:bg-white'
+                            }`}
+                            title={isSaved ? "Saved in Session Citations (Click to remove)" : "Save to Session Citations"}
+                          >
+                            <Bookmark className={`w-3 h-3 ${isSaved ? 'fill-amber-600 text-amber-700' : 'text-slate-500'}`} />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
+                </div>
+              )}
+
+              {/* Prominent Escalation Banner for Low Confidence / Ambiguity */}
+              {msg.sender === 'assistant' && (msg.requiresEscalation || (msg.confidenceScore !== undefined && msg.confidenceScore < 0.7)) && (
+                <div className="mt-3 p-3 bg-amber-50 border-l-4 border-l-amber-700 border border-amber-300 text-amber-950 flex flex-wrap items-center justify-between gap-3">
+                  <div className="space-y-0.5 max-w-md">
+                    <div className="flex items-center gap-1.5 font-bold text-xs text-amber-950">
+                      <ShieldAlert className="w-4 h-4 text-amber-800" />
+                      <span>Statutory Ambiguity Detected (Low Confidence)</span>
+                    </div>
+                    <p className="text-[11px] text-amber-900 leading-snug">
+                      This question touches complex overlapping regimes. We recommend human review by an empanelled AYUSH IP Facilitator.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsEscalationOpen(true)}
+                    className="px-3 py-1.5 bg-[#b45309] hover:bg-amber-800 text-white text-xs font-bold whitespace-nowrap transition-colors border border-amber-900"
+                  >
+                    Escalate to IP Attorney
+                  </button>
                 </div>
               )}
 
               {/* Audio Listen & Facilitator Footer */}
               {msg.sender === 'assistant' && (
-                <div className="mt-3.5 pt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 border-t border-slate-200/80 print:hidden">
+                <div className="mt-3.5 pt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600 border-t border-slate-300 print:hidden">
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
                       onClick={() => handleToggleSpeech(msg.id, msg.text)}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all shadow-2xs ${
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold transition-all border ${
                         speakingMessageId === msg.id
-                          ? 'bg-amber-100 border border-amber-400 text-amber-900'
-                          : 'bg-white border border-slate-300 text-[#002147] hover:bg-blue-50 hover:border-blue-400'
+                          ? 'bg-amber-100 border-amber-500 text-amber-950'
+                          : 'bg-white border-slate-400 text-[#002147] hover:bg-slate-100'
                       }`}
                       title={speakingMessageId === msg.id ? 'Stop listening' : 'Listen to legal assessment in audio'}
                       aria-label={speakingMessageId === msg.id ? 'Stop audio playback' : 'Listen to response in audio'}
                     >
                       {speakingMessageId === msg.id ? (
                         <>
-                          <VolumeX className="w-3.5 h-3.5 text-amber-800 animate-pulse" />
+                          <VolumeX className="w-3.5 h-3.5 text-amber-900 animate-pulse" />
                           <span>{language === 'bn' ? 'অডিও থামান' : language === 'hi' ? 'ऑडियो रोकें' : 'Stop Audio'}</span>
                         </>
                       ) : (
@@ -452,9 +586,9 @@ export const ChatContainer: React.FC = () => {
                     </button>
 
                     {msg.confidenceScore !== undefined && (
-                      <div className="hidden sm:flex items-center gap-1 text-[11px]">
-                        <span>Grounding:</span>
-                        <span className="text-emerald-700 font-mono font-bold">
+                      <div className="hidden sm:flex items-center gap-1 text-[11px] font-semibold">
+                        <span>Statutory Grounding:</span>
+                        <span className="text-emerald-800 font-mono font-bold">
                           {(msg.confidenceScore * 100).toFixed(0)}%
                         </span>
                       </div>
@@ -463,9 +597,9 @@ export const ChatContainer: React.FC = () => {
 
                   <button
                     onClick={() => setIsEscalationOpen(true)}
-                    className="text-amber-800 hover:text-amber-900 flex items-center gap-1 font-semibold hover:underline"
+                    className="text-[#002147] hover:underline flex items-center gap-1 font-bold"
                   >
-                    <ShieldAlert className="w-3.5 h-3.5 text-amber-700" />
+                    <ShieldAlert className="w-3.5 h-3.5 text-[#b45309]" />
                     <span>Facilitator Escalation</span>
                   </button>
                 </div>
@@ -473,7 +607,7 @@ export const ChatContainer: React.FC = () => {
             </div>
 
             {msg.sender === 'user' && (
-              <div className="w-8 h-8 rounded-xl bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-700 flex-shrink-0 mt-1">
+              <div className="w-8 h-8 bg-slate-200 border border-slate-400 flex items-center justify-center text-slate-800 flex-shrink-0 mt-0.5 font-bold">
                 <User className="w-4 h-4" />
               </div>
             )}
@@ -481,12 +615,12 @@ export const ChatContainer: React.FC = () => {
         ))}
 
         {isLoading && (
-          <div className="flex items-center gap-3 text-slate-600 text-xs">
-            <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-[#002147]">
+          <div className="flex items-center gap-3 text-slate-700 text-xs">
+            <div className="w-8 h-8 bg-[#002147] border border-slate-400 flex items-center justify-center text-white">
               <Bot className="w-4 h-4 animate-spin" />
             </div>
-            <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <Sparkles className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+            <div className="flex items-center gap-2 p-3 bg-white border border-slate-400 font-medium">
+              <Sparkles className="w-3.5 h-3.5 text-[#b45309] animate-pulse" />
               <span>
                 {language === 'bn'
                   ? 'পেটেন্ট আইন ১৯৭০ এবং টিকেডিএল অনুসারে উত্তর প্রস্তুত করা হচ্ছে...'
@@ -497,23 +631,36 @@ export const ChatContainer: React.FC = () => {
         )}
       </div>
 
-      {/* 4. Suggested Prompts */}
-      <div className={`px-4 py-2.5 border-t flex items-center gap-2 overflow-x-auto custom-scrollbar print:hidden ${
-        isIntl ? 'bg-indigo-50/40 border-indigo-100' : 'bg-slate-50 border-slate-200'
+      {/* Active Triage Context Banner (Handoff from Wizard) */}
+      {classificationState && (
+        <div className="px-4 py-2 bg-emerald-50 border-t-2 border-emerald-300 text-xs flex flex-wrap items-center justify-between gap-2 text-emerald-950 print:hidden">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-emerald-700" />
+            <span className="font-bold">Active Formulation Context Attached:</span>
+            <span className="font-bold text-emerald-900 bg-white px-2 py-0.5 border border-emerald-400">
+              {classificationState.category}
+            </span>
+            <span className="hidden sm:inline text-emerald-800 text-[11px] font-medium">({classificationState.statute})</span>
+          </div>
+          <Link href="/wizard" className="text-[11px] font-bold text-emerald-900 underline">
+            Modify Triage
+          </Link>
+        </div>
+      )}
+
+      {/* 4. Suggested Prompts (Flat Rectangular Pills) */}
+      <div className={`px-4 py-2 border-t-2 border-slate-300 flex items-center gap-2 overflow-x-auto custom-scrollbar print:hidden ${
+        isIntl ? 'bg-indigo-50/70' : 'bg-slate-100'
       }`}>
-        <span className="text-[11px] text-slate-500 whitespace-nowrap font-bold flex items-center gap-1">
-          <HelpCircle className="w-3 h-3 text-amber-600" />
+        <span className="text-[11px] text-slate-700 whitespace-nowrap font-bold flex items-center gap-1">
+          <HelpCircle className="w-3 h-3 text-[#b45309]" />
           <span>{language === 'bn' ? 'সাধারণ প্রশ্নসমূহ:' : language === 'hi' ? 'सामान्य प्रश्न:' : 'Quick Inquiries:'}</span>
         </span>
         {sampleQueries.map((sample, sIdx) => (
           <button
             key={sIdx}
             onClick={() => handleSend(sample)}
-            className={`text-[11px] px-3 py-1 rounded-lg bg-white border text-slate-700 whitespace-nowrap transition-all shadow-2xs font-medium ${
-              isIntl 
-                ? 'border-indigo-200 hover:text-indigo-900 hover:border-indigo-400 hover:bg-indigo-50/40' 
-                : 'border-slate-200 hover:text-[#002147] hover:border-blue-400 hover:bg-blue-50/40'
-            }`}
+            className="text-[11px] px-3 py-1 bg-white border border-slate-400 text-slate-800 whitespace-nowrap transition-all font-semibold hover:bg-[#002147] hover:text-white"
           >
             {sample}
           </button>
@@ -521,7 +668,7 @@ export const ChatContainer: React.FC = () => {
       </div>
 
       {/* 5. Input Bar with Bhashini AudioRecorder */}
-      <div className="p-3 sm:p-4 bg-white border-t border-slate-200 flex items-center gap-2 print:hidden">
+      <div className="p-3 sm:p-4 bg-white border-t-2 border-slate-300 flex items-center gap-2 print:hidden">
         <AudioRecorder onTranscription={(transcription) => handleSend(transcription)} lang={language} />
 
         <input
@@ -530,18 +677,14 @@ export const ChatContainer: React.FC = () => {
           onChange={(e) => setInputQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
           placeholder={placeholderText}
-          className={`flex-1 bg-slate-50 border rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white transition-colors ${
-            isIntl ? 'border-indigo-200 focus:border-indigo-600' : 'border-slate-300 focus:border-[#002147]'
-          }`}
+          className="flex-1 bg-white border-2 border-slate-400 px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-[#002147] transition-colors"
         />
 
         <button
           type="button"
           onClick={() => handleSend()}
           disabled={!inputQuery.trim() || isLoading}
-          className={`p-2.5 rounded-xl text-white font-semibold shadow-sm transition-all flex-shrink-0 disabled:opacity-40 ${
-            isIntl ? 'bg-indigo-900 hover:bg-indigo-800' : 'bg-[#002147] hover:bg-[#001733]'
-          }`}
+          className="p-2.5 bg-[#002147] hover:bg-[#001733] text-white font-bold transition-all flex-shrink-0 disabled:opacity-40 border border-[#001733]"
           aria-label="Send Query"
         >
           <Send className="w-4 h-4" />

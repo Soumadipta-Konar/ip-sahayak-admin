@@ -32,7 +32,28 @@ export async function askLegalQuestion(
       jurisdiction: jurParam,
       language,
       session_id: effectiveSessionId,
-      context: context || null,
+      context: context ? {
+        category: context.category,
+        title: context.title,
+        statute: context.statute,
+        authority: context.authority,
+        patentability: context.patentability,
+        section_3_risk: context.section_3_risk,
+        patent_risk_description: context.patentRiskDescription,
+        tkdl_status: context.tkdl_status,
+        abs_posture: context.abs_posture,
+        clinical_requirements: context.clinical_requirements,
+        claims_rule: context.claims_rule,
+      } : null,
+      session_metadata: context ? {
+        triage_completed: true,
+        category: context.category,
+        section_3_risk: context.section_3_risk,
+        statute: context.statute,
+        authority: context.authority,
+      } : {
+        triage_completed: false,
+      },
     }),
   });
 

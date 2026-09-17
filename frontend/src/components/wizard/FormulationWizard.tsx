@@ -42,11 +42,28 @@ export const FormulationWizard: React.FC = () => {
     setStep(1);
   };
 
-  const calculateAndCommitDossier = (ans: Record<string, any>) => {
+  const calculateAndCommitDossier = async (ans: Record<string, any>) => {
     const isFirstSchedule = ans.isFirstSchedule === true;
     const isModified = ans.isModified === true;
     const intendedUse = ans.intendedUse;
     const isPurified = ans.isPurified === true;
+
+    // Send state to backend /classify endpoint (Task 3 from notes.txt)
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+      await fetch(`${apiBase}/classify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          is_first_schedule: isFirstSchedule,
+          is_modified: isModified,
+          intended_use: intendedUse === 'food' ? 'food' : 'medicinal',
+          is_purified: isPurified,
+        }),
+      });
+    } catch (e) {
+      // Graceful fallback to client deterministic evaluation if backend route is offline
+    }
 
     let category = '';
     let statute = '';
