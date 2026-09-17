@@ -49,7 +49,8 @@ export const StatutoryDossier: React.FC = () => {
   const generateDossier = async () => {
     setIsGenerating(true);
     try {
-      const response = await fetch('http://localhost:8000/api/v1/dossier/generate', {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+      const response = await fetch(`${apiBase}/dossier/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

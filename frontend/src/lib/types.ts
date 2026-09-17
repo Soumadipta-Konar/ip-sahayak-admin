@@ -8,6 +8,8 @@ export interface StatutoryCitation {
   snippet?: string;
   url?: string;
   jurisdiction: 'IN' | 'INTL';
+  collectedAt?: string;
+  source?: 'canonical' | 'chat_session' | 'user_saved';
 }
 
 export interface ClassificationResult {

@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --background: #f8fafc;
+  --background: #edf2f7;
   --foreground: #0f172a;
   --govt-navy: #002147;
   --govt-blue: #0b3d91;
@@ -13,14 +13,86 @@
 }
 
 body {
-  background-color: #f8fafc;
+  background-color: #edf2f7;
   color: #0f172a;
   min-height: 100vh;
   font-feature-settings: "rlig" 1, "calt" 1;
   transition: font-size 0.15s ease-in-out;
 }
 
-/* Eye-Friendly, GIGW & WCAG 2.1 AAA Compliant High Contrast / Dark Theme */
+/* ==========================================================================
+   OFFICIAL GOVERNMENT OF INDIA (NIC / GIGW 3.0) FLAT ARCHITECTURAL SYSTEM
+   - Zero Drop Shadows across all features, cards, buttons and modules
+   - Sharp, rectangular borders (Zero border-radius)
+   - High-contrast institutional color palette
+   ========================================================================== */
+
+/* 1. Global Box-Shadow Neutralizer */
+*,
+*::before,
+*::after {
+  --tw-shadow: 0 0 #0000 !important;
+  --tw-shadow-colored: 0 0 #0000 !important;
+  box-shadow: none !important;
+}
+
+.shadow-xs,
+.shadow-sm,
+.shadow-md,
+.shadow-lg,
+.shadow-xl,
+.shadow-2xl,
+.shadow-2xs,
+.shadow {
+  box-shadow: none !important;
+}
+
+/* 2. Global Sharp Corner Enforcer (Rectangular Government Modules) */
+.rounded-3xl,
+.rounded-2xl,
+.rounded-xl,
+.rounded-lg,
+.rounded-md {
+  border-radius: 0px !important;
+}
+
+.rounded,
+.rounded-sm,
+.rounded-full {
+  border-radius: 2px !important;
+}
+
+/* 3. Official Government Surface Borders */
+.govt-card {
+  background: #ffffff;
+  border: 1px solid #b0bec5;
+  box-shadow: none !important;
+  border-radius: 0px !important;
+}
+
+.govt-header {
+  background-color: #002147;
+  color: #ffffff;
+  border-radius: 0px !important;
+}
+
+.glass-panel {
+  background: #ffffff;
+  border: 1px solid #b0bec5;
+  box-shadow: none !important;
+  border-radius: 0px !important;
+}
+
+.glass-panel-intl {
+  background: #ffffff;
+  border: 1px solid #90caf9;
+  box-shadow: none !important;
+  border-radius: 0px !important;
+}
+
+/* ==========================================================================
+   GIGW & WCAG 2.1 AAA High Contrast Mode
+   ========================================================================== */
 html.high-contrast {
   color-scheme: dark;
 }
@@ -30,14 +102,12 @@ html.high-contrast body {
   color: #f1f5f9 !important;
 }
 
-/* Master Header & Navigation */
 html.high-contrast header,
 html.high-contrast nav {
   background-color: #070d18 !important;
   border-color: #1e293b !important;
 }
 
-/* Top utility bar */
 html.high-contrast .bg-\[\#f1f5f9\] {
   background-color: #0f172a !important;
   border-color: #1e293b !important;
@@ -50,7 +120,6 @@ html.high-contrast .bg-\[\#f1f5f9\] a {
   color: #cbd5e1 !important;
 }
 
-/* Surfaces, Cards, and Panels */
 html.high-contrast .bg-white,
 html.high-contrast .govt-card,
 html.high-contrast .glass-panel,
@@ -67,7 +136,6 @@ html.high-contrast .bg-slate-100 {
   color: #e2e8f0 !important;
 }
 
-/* Typography & Headings */
 html.high-contrast h1,
 html.high-contrast h2,
 html.high-contrast h3,
@@ -86,7 +154,6 @@ html.high-contrast .text-slate-500 {
   color: #cbd5e1 !important;
 }
 
-/* Form Inputs & Interactive Elements */
 html.high-contrast input,
 html.high-contrast textarea,
 html.high-contrast select {
@@ -100,7 +167,6 @@ html.high-contrast textarea::placeholder {
   color: #9ca3af !important;
 }
 
-/* Badges & Accents - Eye-friendly High Contrast Tones */
 html.high-contrast .bg-emerald-50,
 html.high-contrast .bg-emerald-100 {
   background-color: #064e3b !important;
@@ -132,19 +198,16 @@ html.high-contrast .bg-blue-100 {
   border-color: #2563eb !important;
 }
 
-/* Preserving Imagery & Portraits */
 html.high-contrast img {
   filter: none !important;
   opacity: 1 !important;
 }
 
-/* Borders & Dividers */
 html.high-contrast .border-slate-200,
 html.high-contrast .border-slate-300 {
   border-color: #334155 !important;
 }
 
-/* Chat Bubbles */
 html.high-contrast .chat-bubble-user {
   background-color: #1e3a8a !important;
   color: #ffffff !important;
@@ -156,46 +219,22 @@ html.high-contrast .chat-bubble-assistant {
   color: #f1f5f9 !important;
 }
 
-/* Government of India Portal Surface Styles */
-.govt-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
-}
-
-.govt-header {
-  background-color: #002147;
-  color: #ffffff;
-}
-
-.glass-panel {
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-}
-
-.glass-panel-intl {
-  background: #ffffff;
-  border: 1px solid #93c5fd;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.08);
-}
-
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #e2e8f0;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #94a3b8;
-  border-radius: 9999px;
+  border-radius: 0px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #64748b;
 }
 
-/* Clean Official Print Stylesheet for Statutory Dossier & Consultation PDF Export */
+/* Official Print Stylesheet */
 @media print {
   @page {
     margin: 12mm 15mm;
@@ -209,16 +248,14 @@ html.high-contrast .chat-bubble-assistant {
   .print\:hidden {
     display: none !important;
   }
-  /* Remove noisy background gradients and shadows */
   * {
     box-shadow: none !important;
     text-shadow: none !important;
+    border-radius: 0px !important;
   }
-  /* Ensure statutory cards and sidebars print with neat borders */
   aside, .border {
-    border: 1px solid #cbd5e1 !important;
+    border: 1px solid #b0bec5 !important;
   }
-  /* Avoid breaking cards across pages */
   .rounded-2xl, .rounded-xl {
     break-inside: avoid;
     page-break-inside: avoid;
