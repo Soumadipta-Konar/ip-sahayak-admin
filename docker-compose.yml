@@ -35,10 +35,25 @@ services:
     networks:
       - ip-sakti-net
 
+  # Relational Database for User Profiles & Logs
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=ipsakti_user
+      - POSTGRES_PASSWORD=ipsakti_secret_password
+      - POSTGRES_DB=ipsakti_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ip-sakti-net
+
 volumes:
   qdrant_data:
   neo4j_data:
   redis_data:
+  postgres_data:
 
 networks:
   ip-sakti-net:
