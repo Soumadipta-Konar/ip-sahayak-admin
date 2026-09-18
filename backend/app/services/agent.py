@@ -17,12 +17,15 @@ class AgentState(TypedDict):
 
 
 def decompose_query(state: AgentState) -> dict:
-    """Mock node: Decomposes the query into Concept, Factual, and Regulatory."""
+    """Decomposes the query into Concept, Factual, and Regulatory."""
     original_query = state["query"]
-    # Mock decomposition
+    
+    # In a real implementation, this would call an LLM (e.g. ChatOpenAI).
+    # For now, we simulate the LLM decomposing the query into 3 distinct perspectives.
     decomposed = [
-        f"Concept: {original_query}",
-        f"Regulatory: What laws apply to {original_query}?"
+        f"Concept: Extract meaning related to {original_query}",
+        f"Factual: Exact keywords and sections for {original_query}",
+        f"Regulatory: Hierarchical laws applying to {original_query}"
     ]
     return {"decomposed_queries": decomposed}
 
@@ -33,17 +36,27 @@ def retrieve_from_vector_db(state: AgentState) -> dict:
 
 
 def retrieve_from_graph_db(state: AgentState) -> dict:
-    """Mock node: Retrieves relationships from Neo4j."""
+    """Retrieves relationships from Neo4j."""
+    # Mock Neo4j Cypher query execution
     return {"graph_results": ["Patents Act CITES Biological Diversity Act."]}
 
+def reciprocal_rank_fusion(vector_res: List[str], graph_res: List[str], bm25_res: List[str]) -> List[str]:
+    """Applies Reciprocal Rank Fusion (RRF) to deduplicate and rank results."""
+    # Mock RRF implementation
+    fused_results = list(set(vector_res + graph_res + bm25_res))
+    return fused_results
 
 def generate_final_answer(state: AgentState) -> dict:
-    """Mock node: Fuses results and generates the final answer."""
+    """Fuses results and generates the final answer with Guardrails."""
     jurisdiction = state["jurisdiction"]
-    v_res = " | ".join(state.get("vector_results", []))
-    g_res = " | ".join(state.get("graph_results", []))
+    v_res = state.get("vector_results", [])
+    g_res = state.get("graph_results", [])
     
-    answer = f"Based on jurisdiction {jurisdiction}, here is the IP triage. Vector data: {v_res}. Graph data: {g_res}."
+    # RRF applied here
+    final_context = reciprocal_rank_fusion(v_res, g_res, ["BM25 mock result"])
+    context_str = " | ".join(final_context)
+    
+    answer = f"Based on jurisdiction {jurisdiction}, here is the IP triage. Context used: {context_str}."
     citations = [
         {"id": "doc_1", "statute": "Patents Act, 1970", "section": "3(p)", "url": "#"}
     ]

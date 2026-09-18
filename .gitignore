@@ -36,6 +36,10 @@ docs/
 data/raw/
 data/processed/
 corpus_index.csv
+corpus.zip
+corpus/
+corpus_extracted/
+*.pdf
 !data/.gitkeep
 
 # Docker

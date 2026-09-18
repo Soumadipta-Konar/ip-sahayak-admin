@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     NEO4J_URI: str = "bolt://localhost:7687"
     NEO4J_USER: str = "neo4j"
     NEO4J_PASS: str = "ipsakti_secret_password"
+    
+    # Celery and Redis
+    REDIS_URL: str = "redis://localhost:6379/0"
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
