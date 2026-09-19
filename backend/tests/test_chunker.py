@@ -1,3 +1,10 @@
+import sys
+from pathlib import Path
+
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
 from app.services.etl.chunker import LegalDocumentChunker
 
 def test_legal_chunker_basic():
@@ -26,3 +33,8 @@ This is section 3.
     assert chunks[2].chapter_name == "Chapter II INVENTIONS NOT PATENTABLE"
     assert "Section 3" in chunks[2].section_name
     assert "This is section 3." in chunks[2].content
+
+
+if __name__ == "__main__":
+    test_legal_chunker_basic()
+    print("test_chunker: ALL TESTS PASSED!")

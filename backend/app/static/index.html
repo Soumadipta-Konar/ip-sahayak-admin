@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IP-SAKTI Sahayak | Admin & Data Ingestion Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <!-- Top National Header -->
+  <header class="gov-topbar">
+    <div class="container topbar-flex">
+      <div class="gov-brand">
+        <span class="flag-stripe"></span>
+        <div class="gov-emblem-text">
+          <span class="gov-title">GOVERNMENT OF INDIA</span>
+          <span class="gov-dept">Ministry of AYUSH &bull; DPIIT Patent & Biodiversity Cell</span>
+        </div>
+      </div>
+      <div class="topbar-badge">
+        <span class="status-dot"></span>
+        <span>Secure Ingestion Engine Active</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- App Main Header -->
+  <header class="app-header">
+    <div class="container header-flex">
+      <div class="title-group">
+        <div class="logo-icon">⚖️</div>
+        <div>
+          <div class="badge-row">
+            <span class="pill-badge pill-primary">ETL & Graph Construction</span>
+            <span class="pill-badge pill-neutral">v1.0.0 Light Console</span>
+          </div>
+          <h1 class="main-title">IP-SAKTI Sahayak &bull; Admin Corpus Console</h1>
+          <p class="subtitle">Hierarchical Statute Parser, Qdrant Vector Upserter & Neo4j Knowledge Graph Builder</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-refresh" class="btn btn-outline" title="Refresh Corpus Data">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          Refresh
+        </button>
+        <button id="btn-open-upload" class="btn btn-primary">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload Document
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container main-content">
+    <!-- Database Health & Metric KPI Cards -->
+    <section class="kpi-grid">
+      <div class="card kpi-card">
+        <div class="kpi-icon-wrap bg-blue-subtle text-blue">📁</div>
+        <div class="kpi-details">
+          <span class="kpi-label">Corpus Documents</span>
+          <h3 id="stat-total-docs" class="kpi-value">3</h3>
+          <span class="kpi-subtext">.txt statutes & .pdf gazettes</span>
+        </div>
+      </div>
+
+      <div class="card kpi-card">
+        <div class="kpi-icon-wrap bg-emerald-subtle text-emerald">✂️</div>
+        <div class="kpi-details">
+          <span class="kpi-label">Hierarchical Chunks</span>
+          <h3 id="stat-total-chunks" class="kpi-value">8</h3>
+          <span class="kpi-subtext">With injected breadcrumbs</span>
+        </div>
+      </div>
+
+      <div class="card kpi-card">
+        <div class="kpi-icon-wrap bg-indigo-subtle text-indigo">🧠</div>
+        <div class="kpi-details">
+          <span class="kpi-label">Qdrant Vector DB</span>
+          <div class="db-status-row">
+            <span id="qdrant-indicator" class="dot dot-amber"></span>
+            <span id="qdrant-status-text" class="status-label">Checking...</span>
+          </div>
+          <span class="kpi-subtext">Collection: <code>legal_chunks</code> (384d Cosine)</span>
+        </div>
+      </div>
+
+      <div class="card kpi-card">
+        <div class="kpi-icon-wrap bg-purple-subtle text-purple">🕸️</div>
+        <div class="kpi-details">
+          <span class="kpi-label">Neo4j Knowledge Graph</span>
+          <div class="db-status-row">
+            <span id="neo4j-indicator" class="dot dot-amber"></span>
+            <span id="neo4j-status-text" class="status-label">Checking...</span>
+          </div>
+          <span class="kpi-subtext">Ontology: <code>(:Statute)-[:CONTAINS_SECTION]->(:Section)</code></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Global Operations Banner -->
+    <section class="card operations-card">
+      <div class="ops-left">
+        <div>
+          <h2 class="ops-title">Data Ingestion Controls</h2>
+          <p class="ops-desc">Trigger full corpus ingestion with dual-format (.txt/.pdf) cleaning, embedding, and graph triples injection.</p>
+        </div>
+      </div>
+      <div class="ops-right">
+        <div class="select-group">
+          <label for="format-select" class="form-label-inline">Format:</label>
+          <select id="format-select" class="select-control">
+            <option value="auto" selected>Auto Detect</option>
+            <option value="txt">Clean .txt (Fast)</option>
+            <option value="pdf">Raw .pdf (Extract & Clean)</option>
+          </select>
+        </div>
+
+        <button id="btn-dry-run" class="btn btn-secondary" title="Simulate extraction & chunking without database writes">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Dry-Run Test
+        </button>
+
+        <button id="btn-batch-ingest" class="btn btn-emerald">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Ingest All Documents
+        </button>
+
+
+      </div>
+    </section>
+
+    <!-- Corpus Document Table Section -->
+    <section class="card table-card">
+      <div class="table-toolbar">
+        <div class="toolbar-left">
+          <h2 class="section-title">Corpus Statutory Documents</h2>
+          <span id="doc-count-badge" class="count-badge">3 files registered</span>
+        </div>
+        <div class="toolbar-right">
+          <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="search-input" type="text" placeholder="Filter by statute, title, or type..." class="input-control" />
+          </div>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Document / File</th>
+              <th>Act Name</th>
+              <th>Year</th>
+              <th>Jurisdiction</th>
+              <th>Document Type</th>
+              <th>Status</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="corpus-table-body">
+            <tr>
+              <td colspan="7" class="loading-cell">Loading corpus records from index...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Live Execution Logs Console -->
+    <section class="card terminal-card">
+      <div class="terminal-header">
+        <div class="terminal-title-row">
+          <span class="terminal-dot bg-red"></span>
+          <span class="terminal-dot bg-amber"></span>
+          <span class="terminal-dot bg-emerald"></span>
+          <span class="terminal-title">Admin ETL Execution Stream & Audit Logs</span>
+        </div>
+        <button id="btn-clear-logs" class="btn-text">Clear Console</button>
+      </div>
+      <div id="terminal-body" class="terminal-body">
+        <div class="log-line log-info">[INFO] IP-SAKTI Sahayak Data Ingestion Console initialized.</div>
+        <div class="log-line log-info">[INFO] Target Qdrant endpoint: http://localhost:6333 (Collection: legal_chunks)</div>
+        <div class="log-line log-info">[INFO] Target Neo4j URI: bolt://localhost:7687 (User: neo4j)</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Chunk & Breadcrumb Inspector Modal -->
+  <div id="inspector-modal" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <span class="modal-eyebrow">Hierarchical Chunking Inspector</span>
+          <h3 id="modal-doc-title" class="modal-title">Document Chunks</h3>
+          <p id="modal-doc-subtitle" class="modal-subtitle">Injected breadcrumbs & verbatim statutory text</p>
+        </div>
+        <button id="btn-close-modal" class="btn-icon" aria-label="Close">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-tabs">
+          <button id="tab-btn-chunks" class="modal-tab active">Parsed Chunks (<span id="modal-chunk-count">0</span>)</button>
+          <button id="tab-btn-payload" class="modal-tab">Qdrant Payload Preview</button>
+          <button id="tab-btn-graph" class="modal-tab">Neo4j Provenance Triples</button>
+        </div>
+
+        <div id="tab-content-chunks" class="tab-pane active">
+          <div id="chunks-container" class="chunks-flow"></div>
+        </div>
+
+        <div id="tab-content-payload" class="tab-pane hidden">
+          <pre id="payload-json-view" class="code-block"></pre>
+        </div>
+
+        <div id="tab-content-graph" class="tab-pane hidden">
+          <div class="graph-preview-box">
+            <h4 class="graph-heading">Deterministic Neo4j Knowledge Subgraph Generated:</h4>
+            <div id="graph-triples-list" class="triples-flow"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="btn-modal-ingest" class="btn btn-primary">Ingest This Document</button>
+        <button id="btn-modal-close" class="btn btn-outline">Close Inspector</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload Modal -->
+  <div id="upload-modal" class="modal-backdrop hidden">
+    <div class="modal-dialog modal-dialog-sm">
+      <div class="modal-header">
+        <div>
+          <span class="modal-eyebrow">Add To Corpus</span>
+          <h3 class="modal-title">Upload Legal Document</h3>
+        </div>
+        <button id="btn-close-upload" class="btn-icon">&times;</button>
+      </div>
+      <form id="upload-form" class="modal-body space-y-4">
+        <div class="form-group">
+          <label class="form-label" for="upload-file-input">Select Legal File (.txt or .pdf):</label>
+          <input type="file" id="upload-file-input" class="file-input" accept=".txt,.pdf,.md" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="upload-act-name">Statute / Act Name (Optional):</label>
+          <input type="text" id="upload-act-name" class="input-control" placeholder="e.g. The Patents Act, 1970" />
+          <span class="form-hint">Year and document type will be auto-detected from the file.</span>
+        </div>
+        <div class="modal-footer pt-3">
+          <button type="submit" class="btn btn-primary w-full">Upload & Register in Corpus</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
