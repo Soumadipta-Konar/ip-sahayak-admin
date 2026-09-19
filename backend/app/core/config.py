@@ -11,6 +11,11 @@ class Settings(BaseSettings):
     
     # Data Sources
     RAW_DATA_DRIVE_URL: str = ""
+
+    # Embeddings (must match the retrieve/egestion service exactly)
+    EMBEDDING_MODEL_NAME: str = "BAAI/bge-small-en-v1.5"
+    EMBEDDING_DIMENSION: int = 384
+    QDRANT_COLLECTION_NAME: str = "legal_chunks"
     
     # Database URLs
     QDRANT_URL: str = "http://localhost:6333"

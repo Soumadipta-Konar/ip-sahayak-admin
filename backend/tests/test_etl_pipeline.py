@@ -160,6 +160,10 @@ def test_qdrant_payload_schema_compliance():
         upserted_count = pipeline.upsert_vectors([chunk])
         assert upserted_count == 1
 
+        mock_embedder.encode.assert_called_once()
+        encode_kwargs = mock_embedder.encode.call_args.kwargs
+        assert encode_kwargs.get("normalize_embeddings") is True
+
         mock_client.upsert.assert_called_once()
         _, kwargs = mock_client.upsert.call_args
         assert kwargs["collection_name"] == COLLECTION_NAME

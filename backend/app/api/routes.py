@@ -1,9 +1,12 @@
 import os
 import re
 import csv
+import json
+import asyncio
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Form
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.services.etl.chunker import LegalDocumentChunker, extract_text_from_file
@@ -12,6 +15,53 @@ from app.services.etl.tasks import ingest_document_task, celery_app
 from app.core.config import settings
 
 router = APIRouter()
+
+CORPUS_INDEX_FIELDS = [
+    "file_path",
+    "document_title",
+    "act_name",
+    "year",
+    "jurisdiction",
+    "language",
+    "document_type",
+    "status",
+]
+
+
+def _resolve_corpus_index_path() -> Path:
+    candidates = [
+        Path("corpus_index.csv"),
+        Path("../corpus_index.csv"),
+        Path("../../corpus_index.csv"),
+    ]
+    return next((p for p in candidates if p.exists()), candidates[0])
+
+
+def _indexed_filenames() -> List[str]:
+    csv_path = _resolve_corpus_index_path()
+    if not csv_path.exists():
+        return []
+    names: List[str] = []
+    with open(csv_path, mode="r", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            file_path = (row.get("file_path") or "").strip()
+            if file_path:
+                names.append(Path(file_path).name)
+    return names
+
+
+def _resolve_corpus_file(filename: str) -> Optional[Path]:
+    path = Path(filename)
+    if path.exists():
+        return path
+    candidates = [
+        Path(filename),
+        Path("corpus_extracted") / filename,
+        Path("../corpus_extracted") / filename,
+        Path("corpus_extracted") / path.name,
+        Path("../corpus_extracted") / path.name,
+    ]
+    return next((c for c in candidates if c.exists()), None)
 
 
 class IngestFileRequest(BaseModel):
@@ -128,6 +178,218 @@ async def ingest_entire_directory(request: IngestDirectoryRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Directory ingestion failed: {str(e)}")
+
+
+@router.post("/ingest/stream")
+async def ingest_stream(request: IngestDirectoryRequest):
+    """
+    Streams real-time step-by-step ETL progress events (NDJSON) for all documents.
+    Enables live progress bar, file status updates, and stage indicators in the UI.
+    """
+    path = Path(request.dir_path)
+    if not path.exists() or not path.is_dir():
+        candidates = [
+            Path(request.dir_path),
+            Path("../") / request.dir_path,
+            Path("corpus_extracted"),
+            Path("../corpus_extracted"),
+        ]
+        found = next((c for c in candidates if c.exists() and c.is_dir()), None)
+        if not found:
+            raise HTTPException(status_code=404, detail=f"Directory not found: {request.dir_path}")
+        path = found
+
+    supported_extensions = {".txt", ".md", ".pdf"}
+    files_to_process = sorted([
+        f for f in path.iterdir() if f.is_file() and f.suffix.lower() in supported_extensions
+    ])
+
+    async def event_generator():
+        total_files = len(files_to_process)
+        if total_files == 0:
+            yield json.dumps({
+                "type": "error",
+                "message": f"No supported legal documents (.txt, .md, .pdf) found in {path.name}",
+                "percent": 100,
+            }) + "\n"
+            return
+
+        yield json.dumps({
+            "type": "start",
+            "total_files": total_files,
+            "directory": path.name,
+            "dry_run": request.dry_run,
+            "percent": 0,
+            "message": f"Starting ingestion pipeline for {total_files} document(s)...",
+        }) + "\n"
+
+        pipeline = None
+        if not request.dry_run:
+            try:
+                pipeline = ETLIngestionPipeline()
+            except Exception as pe:
+                yield json.dumps({
+                    "type": "error",
+                    "message": f"Pipeline initialization notice: {pe}",
+                    "percent": 0,
+                }) + "\n"
+
+        total_chunks_processed = 0
+
+        for idx, file in enumerate(files_to_process):
+            base_percent = int((idx / total_files) * 100)
+            file_name = file.name
+
+            # 1. File start / Extract text
+            yield json.dumps({
+                "type": "file_start",
+                "file": file_name,
+                "file_index": idx + 1,
+                "total_files": total_files,
+                "percent": base_percent,
+                "step": "extract",
+                "message": f"[{idx + 1}/{total_files}] Extracting and cleaning text from {file_name}...",
+            }) + "\n"
+            await asyncio.sleep(0.04)
+
+            try:
+                # 2. Chunking with LegalDocumentChunker
+                doc_id = file.stem.replace(" ", "_").lower()
+                act_name = file.stem.replace("_", " ").title()
+                chunker = LegalDocumentChunker(
+                    doc_id=doc_id,
+                    act_name=act_name,
+                    jurisdiction="IN",
+                    source_file=file.name,
+                )
+                chunks = chunker.chunk_file(file, format_type=request.format)
+                chunks_count = len(chunks)
+                total_chunks_processed += chunks_count
+
+                chunk_percent = min(99, base_percent + int((1 / total_files) * 35))
+                yield json.dumps({
+                    "type": "step",
+                    "file": file_name,
+                    "file_index": idx + 1,
+                    "total_files": total_files,
+                    "percent": chunk_percent,
+                    "step": "chunk",
+                    "chunks_count": chunks_count,
+                    "message": f"Chunked {file_name} into {chunks_count} hierarchical sections with breadcrumbs.",
+                }) + "\n"
+                await asyncio.sleep(0.04)
+
+                if request.dry_run:
+                    file_done_percent = int(((idx + 1) / total_files) * 100)
+                    yield json.dumps({
+                        "type": "file_done",
+                        "file": file_name,
+                        "file_index": idx + 1,
+                        "total_files": total_files,
+                        "percent": file_done_percent,
+                        "status": "Dry-run Success",
+                        "chunks_count": chunks_count,
+                        "vectors_inserted": 0,
+                        "graph_nodes": 0,
+                        "graph_edges": 0,
+                        "message": f"[DRY-RUN] Verified {file_name}: {chunks_count} chunks structured.",
+                    }) + "\n"
+                    await asyncio.sleep(0.04)
+                    continue
+
+                # 3. Embeddings & Qdrant Upsert
+                embed_percent = min(99, base_percent + int((1 / total_files) * 65))
+                yield json.dumps({
+                    "type": "step",
+                    "file": file_name,
+                    "file_index": idx + 1,
+                    "total_files": total_files,
+                    "percent": embed_percent,
+                    "step": "embed",
+                    "chunks_count": chunks_count,
+                    "message": f"Generating 384-d BGE dense embeddings for {chunks_count} chunks...",
+                }) + "\n"
+                await asyncio.sleep(0.04)
+
+                vectors_inserted = 0
+                graph_stats = {"nodes_created": 0, "edges_created": 0}
+
+                if pipeline:
+                    # Qdrant Upsert
+                    qdrant_percent = min(99, base_percent + int((1 / total_files) * 75))
+                    yield json.dumps({
+                        "type": "step",
+                        "file": file_name,
+                        "file_index": idx + 1,
+                        "total_files": total_files,
+                        "percent": qdrant_percent,
+                        "step": "qdrant",
+                        "message": f"Upserting {chunks_count} vector points to Qdrant collection '{settings.QDRANT_COLLECTION_NAME}'...",
+                    }) + "\n"
+                    await asyncio.sleep(0.04)
+                    vectors_inserted = pipeline.upsert_vectors(chunks)
+
+                    # 4. Neo4j Triples
+                    neo_percent = min(99, base_percent + int((1 / total_files) * 88))
+                    yield json.dumps({
+                        "type": "step",
+                        "file": file_name,
+                        "file_index": idx + 1,
+                        "total_files": total_files,
+                        "percent": neo_percent,
+                        "step": "neo4j",
+                        "message": f"Constructing Neo4j statutory knowledge graph & cross-references...",
+                    }) + "\n"
+                    await asyncio.sleep(0.04)
+                    graph_stats = pipeline.insert_graph_nodes_and_edges(chunks)
+                    pipeline._update_corpus_index(file.name, status="Ingested")
+
+                file_done_percent = int(((idx + 1) / total_files) * 100)
+                yield json.dumps({
+                    "type": "file_done",
+                    "file": file_name,
+                    "file_index": idx + 1,
+                    "total_files": total_files,
+                    "percent": file_done_percent,
+                    "status": "Success",
+                    "chunks_count": chunks_count,
+                    "vectors_inserted": vectors_inserted,
+                    "graph_nodes": graph_stats.get("nodes_created", 0),
+                    "graph_edges": graph_stats.get("edges_created", 0),
+                    "message": f"Successfully ingested {file_name}: {chunks_count} chunks, {vectors_inserted} vectors.",
+                }) + "\n"
+                await asyncio.sleep(0.04)
+
+            except Exception as fe:
+                if pipeline:
+                    pipeline._update_corpus_index(file.name, status="Failed")
+                err_percent = int(((idx + 1) / total_files) * 100)
+                yield json.dumps({
+                    "type": "file_error",
+                    "file": file_name,
+                    "file_index": idx + 1,
+                    "total_files": total_files,
+                    "percent": err_percent,
+                    "status": "Failed",
+                    "error": str(fe),
+                    "message": f"Error ingesting {file_name}: {str(fe)}",
+                }) + "\n"
+                await asyncio.sleep(0.04)
+
+        if pipeline:
+            pipeline.close()
+
+        yield json.dumps({
+            "type": "complete",
+            "percent": 100,
+            "total_files": total_files,
+            "total_chunks": total_chunks_processed,
+            "dry_run": request.dry_run,
+            "message": f"ETL Pipeline execution completed: {total_files} file(s) processed.",
+        }) + "\n"
+
+    return StreamingResponse(event_generator(), media_type="application/x-ndjson")
+
 
 
 @router.post("/preview/chunks")
@@ -449,4 +711,52 @@ async def check_health():
         "version": settings.VERSION,
         "environment": settings.ENVIRONMENT,
         "database_health": status,
+    }
+
+
+@router.get("/stats")
+async def get_system_stats():
+    """
+    Returns verified system statistics:
+    - Total registered documents in corpus_index.csv
+    - Real points/chunks count in Qdrant collection
+    - Ingestion status counts (Pending, Ingested, Failed)
+    """
+    candidate_paths = [
+        Path("corpus_index.csv"),
+        Path("../corpus_index.csv"),
+        Path("../../corpus_index.csv"),
+    ]
+    csv_path = next((p for p in candidate_paths if p.exists()), None)
+    total_docs = 0
+    status_counts = {"Pending": 0, "Ingested": 0, "Failed": 0}
+    if csv_path:
+        try:
+            with open(csv_path, mode="r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    total_docs += 1
+                    st = (row.get("status") or "Pending").strip()
+                    status_counts[st] = status_counts.get(st, 0) + 1
+        except Exception:
+            pass
+
+    qdrant_chunks_count = 0
+    qdrant_connected = False
+    try:
+        from qdrant_client import QdrantClient
+        qc = QdrantClient(url=settings.QDRANT_URL, timeout=1.0)
+        col_info = qc.get_collection(settings.QDRANT_COLLECTION_NAME)
+        qdrant_chunks_count = col_info.points_count or 0
+        qdrant_connected = True
+    except Exception:
+        qdrant_chunks_count = 0
+        qdrant_connected = False
+
+    return {
+        "total_documents": total_docs,
+        "total_chunks": qdrant_chunks_count,
+        "status_breakdown": status_counts,
+        "qdrant_connected": qdrant_connected,
+        "collection_name": settings.QDRANT_COLLECTION_NAME,
     }

@@ -11,10 +11,10 @@ from app.services.etl.chunker import LegalDocumentChunker, LegalChunk, extract_t
 
 logger = logging.getLogger(__name__)
 
-# Qdrant constants
-COLLECTION_NAME = "legal_chunks"
-VECTOR_DIMENSION = 384
-EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+# Qdrant constants — keep in lockstep with the retrieve/egestion service
+COLLECTION_NAME = settings.QDRANT_COLLECTION_NAME
+VECTOR_DIMENSION = settings.EMBEDDING_DIMENSION
+EMBEDDING_MODEL_NAME = settings.EMBEDDING_MODEL_NAME
 INDEXED_PAYLOAD_FIELDS = ["doc_id", "jurisdiction", "document_type", "act_name"]
 
 
@@ -156,9 +156,16 @@ class ETLIngestionPipeline:
         self.init_qdrant_collection()
         embedder = self._get_embedder()
 
+        # Passage embeddings: no BGE query instruction. Retrieve side should prefix queries with
+        # "Represent this sentence for searching relevant passages: " and also normalize.
         texts_to_embed = [chunk.content for chunk in chunks]
         logger.info(f"[Qdrant] Generating embeddings for {len(texts_to_embed)} chunks...")
-        embeddings = embedder.encode(texts_to_embed, show_progress_bar=False, batch_size=batch_size).tolist()
+        embeddings = embedder.encode(
+            texts_to_embed,
+            show_progress_bar=False,
+            batch_size=batch_size,
+            normalize_embeddings=True,
+        ).tolist()
 
         points = []
         for idx, (chunk, vector) in enumerate(zip(chunks, embeddings)):

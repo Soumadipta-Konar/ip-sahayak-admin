@@ -9,7 +9,7 @@ The previous Next.js chat frontend is not part of this tree. The admin UI is a s
 - Registers legal files (`.txt`, `.md`, `.pdf`) in `corpus_index.csv`
 - Cleans gazette/PDF text (headers, table of contents, hyphenation)
 - Chunks by chapter/section and injects breadcrumbs
-- Embeds chunks with `sentence-transformers/all-MiniLM-L6-v2` (384-d cosine)
+- Embeds chunks with `BAAI/bge-small-en-v1.5` (384-d cosine, L2-normalized). The retrieve service must use the same model, dimension, and `normalize_embeddings=True`. Prefix search queries with `Represent this sentence for searching relevant passages: `; do not prefix stored passages.
 - Upserts vectors to Qdrant collection `legal_chunks`
 - Builds Neo4j triples such as `(:Statute)-[:CONTAINS_SECTION]->(:Section)`
 - Optional async ingestion via Celery + Redis
