@@ -4,6 +4,7 @@ uvicorn==0.27.1
 pydantic==2.6.3
 pydantic-settings
 python-dotenv
+python-multipart
 
 # Data Ingestion & OCR
 PyMuPDF==1.23.22 # fitz
